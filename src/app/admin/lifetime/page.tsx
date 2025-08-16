@@ -1,3 +1,4 @@
+
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
@@ -12,6 +13,7 @@ export type LifetimeApplication = {
     email: string;
     memberId?: string;
     lifetimeStatus: 'not_applied' | 'applied' | 'approved';
+    lifetimeStartDate?: string;
     lifetimeExpiry?: string;
     paymentTransactionId?: string;
 }
@@ -37,6 +39,7 @@ export default function LifetimeMembershipPage() {
                     email: data.email || "N/A",
                     memberId: data.memberId,
                     lifetimeStatus: data.lifetimeStatus || 'not_applied',
+                    lifetimeStartDate: data.lifetimeStartDate,
                     lifetimeExpiry: data.lifetimeExpiry,
                     paymentTransactionId: data.paymentTransactionId,
                 };
@@ -73,6 +76,7 @@ export default function LifetimeMembershipPage() {
                             data={applications} 
                             filterColumnId="name"
                             filterPlaceholder="Filter by name..."
+                            dateFilterColumnId="lifetimeStartDate"
                         />
                     )}
                 </CardContent>
