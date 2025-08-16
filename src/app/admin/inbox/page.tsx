@@ -2,15 +2,21 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
 import { columns, Message } from "./columns";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import { adminDb } from "@/lib/firebase/client-app";
+import { Button } from "@/components/ui/button";
+import { deleteMessages } from "./actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function InboxPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+    const [isPending, startTransition] = useTransition();
+    const { toast } = useToast();
 
-     useEffect(() => {
+    useEffect(() => {
         const messagesCollection = collection(adminDb, 'contactSubmissions');
         const q = query(messagesCollection, orderBy('submittedAt', 'desc'));
 
@@ -36,6 +42,25 @@ export default function InboxPage() {
 
         return () => unsubscribe();
     }, []);
+    
+    const handleBulkDelete = () => {
+        startTransition(async () => {
+            const result = await deleteMessages(selectedMessageIds);
+            if (result.success) {
+                toast({ title: "Success", description: "Selected messages have been deleted." });
+            } else {
+                toast({ variant: "destructive", title: "Error", description: result.error });
+            }
+        });
+    }
+
+    const onRowSelectionChange = (selectedRows: Record<string, boolean>) => {
+        const selectedIds = messages
+            .filter((_, index) => selectedRows[index])
+            .map(message => message.id);
+        setSelectedMessageIds(selectedIds);
+    };
+
 
     return (
         <div className="space-y-6">
@@ -59,6 +84,19 @@ export default function InboxPage() {
                             data={messages} 
                             filterColumnId="name"
                             filterPlaceholder="Filter by name..."
+                            onRowSelectionChange={onRowSelectionChange}
+                            bulkActions={
+                                selectedMessageIds.length > 0 ? (
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={handleBulkDelete}
+                                        disabled={isPending}
+                                    >
+                                        Delete ({selectedMessageIds.length})
+                                    </Button>
+                                ) : null
+                            }
                         />
                     )}
                 </CardContent>
