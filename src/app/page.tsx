@@ -7,15 +7,14 @@ import { ArrowRight, CheckCircle, Clock, FileText, User } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { logSiteVisit } from "./admin/actions";
 import { format } from 'date-fns';
+import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const { user, serviceRequests } = await getDashboardData();
   
-  if (user) {
-    await logSiteVisit();
-  }
-
   if (!user) {
+    // This part is for non-logged-in users.
+    // A proper homepage for them.
     return (
        <div className="flex flex-col min-h-screen">
         <main className="flex-1">
@@ -62,6 +61,9 @@ export default async function DashboardPage() {
        </div>
     );
   }
+
+  // If we have a user, log the visit and show the dashboard.
+  await logSiteVisit();
 
   const approvedRequests = serviceRequests.filter(req => req.status === 'approved').length;
   const pendingRequests = serviceRequests.filter(req => req.status === 'pending').length;
