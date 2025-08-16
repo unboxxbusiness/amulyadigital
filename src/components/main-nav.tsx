@@ -22,8 +22,6 @@ const adminNavItems = [
   {href: '/admin/applications', label: 'Membership Applications', icon: Users},
   {href: '/admin/lifetime', label: 'Lifetime Requests', icon: Crown},
   {href: '/admin/services', label: 'Service Requests', icon: FileText},
-  {href: '/support', label: 'AI Support', icon: LifeBuoy},
-  {href: '/contact', label: 'Contact', icon: Mail},
 ];
 
 type NavItem = {
