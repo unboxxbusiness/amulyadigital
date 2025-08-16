@@ -9,6 +9,7 @@ import {Toaster} from '@/components/ui/toaster';
 import {useEffect, useState} from 'react';
 import { onAuthStateChanged, User} from 'firebase/auth';
 import { auth } from '@/lib/firebase/client-app';
+import { ThemeProvider } from 'next-themes';
 
 export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
   const pathname = usePathname();
@@ -45,28 +46,35 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {isClient && showNav && user ? (
-          <SidebarProvider>
-            <Sidebar>
-              <div className="flex flex-col h-full">
-                <div className="p-4">
-                  <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                    <Leaf className="size-6 text-accent" />
-                    <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">Amulya Digital</span>
+         <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {isClient && showNav && user ? (
+              <SidebarProvider>
+                <Sidebar>
+                  <div className="flex flex-col h-full">
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+                        <Leaf className="size-6 text-accent" />
+                        <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">Amulya Digital</span>
+                      </div>
+                    </div>
+                    <MainNav />
                   </div>
-                </div>
-                <MainNav />
-              </div>
-            </Sidebar>
-            <SidebarInset>
-              <SiteHeader />
-              <main className="p-4 lg:p-6">{children}</main>
-            </SidebarInset>
-          </SidebarProvider>
-        ) : (
-          <main>{children}</main>
-        )}
-        <Toaster />
+                </Sidebar>
+                <SidebarInset>
+                  <SiteHeader />
+                  <main className="p-4 lg:p-6">{children}</main>
+                </SidebarInset>
+              </SidebarProvider>
+            ) : (
+              <main>{children}</main>
+            )}
+            <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
