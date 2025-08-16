@@ -29,7 +29,6 @@ export async function signUp(formData: FormData) {
 
     await adminAuth.setCustomUserClaims(userRecord.uid, {role, status});
 
-    // Create user document in Firestore
     await adminDb.collection('users').doc(userRecord.uid).set({
       uid: userRecord.uid,
       email: userRecord.email,
@@ -49,14 +48,14 @@ export async function signUp(formData: FormData) {
   }
 }
 
-export async function signInWithIdToken(idToken: string) {
+export async function createSessionAction(uid: string) {
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    await createSession(decodedToken.uid);
-    const user = await adminAuth.getUser(decodedToken.uid);
+    await createSession(uid);
+    const user = await adminAuth.getUser(uid);
     const role = user.customClaims?.role;
     revalidatePath('/');
-    redirect(role === 'admin' ? '/admin' : '/');
+    const redirectPath = role === 'admin' ? '/admin' : '/';
+    return {redirectPath};
   } catch (error: any) {
     return {error: error.message};
   }
