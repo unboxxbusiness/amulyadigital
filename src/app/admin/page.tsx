@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, FileText, Users } from "lucide-react";
 import { adminDb } from "@/lib/firebase/admin-app";
 import { getAllServiceRequests } from "../services/actions";
