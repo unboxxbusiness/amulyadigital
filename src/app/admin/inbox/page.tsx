@@ -1,8 +1,9 @@
+
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
 import { columns, Message } from "./columns";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useCallback } from "react";
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import { adminDb } from "@/lib/firebase/client-app";
 import { Button } from "@/components/ui/button";
@@ -54,12 +55,12 @@ export default function InboxPage() {
         });
     }
 
-    const onRowSelectionChange = (selectedRows: Record<string, boolean>) => {
+    const onRowSelectionChange = useCallback((selectedRows: Record<string, boolean>) => {
         const selectedIds = messages
             .filter((_, index) => selectedRows[index])
             .map(message => message.id);
         setSelectedMessageIds(selectedIds);
-    };
+    }, [messages]);
 
 
     return (
