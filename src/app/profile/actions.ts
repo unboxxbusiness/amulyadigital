@@ -3,7 +3,6 @@
 import { verifySession } from "@/lib/auth/session";
 import { adminAuth, adminDb } from "@/lib/firebase/admin-app";
 import { revalidatePath } from "next/cache";
-import { customAlphabet } from 'nanoid';
 
 export async function applyForLifetimeMembership() {
   const session = await verifySession();
@@ -36,15 +35,10 @@ export async function approveLifetimeMembership(formData: FormData) {
     throw new Error('User ID is missing');
   }
   
-  // Generate a unique membership ID
-  const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 10);
-  const lifetimeMembershipId = `LTM-${nanoid()}`;
-
   try {
     const userDocRef = adminDb.collection("users").doc(uid);
     await userDocRef.update({
       lifetimeStatus: "approved",
-      lifetimeMembershipId: lifetimeMembershipId,
     });
 
     // Update custom claims

@@ -13,7 +13,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { applyForLifetimeMembership } from './actions';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
-import { Leaf } from 'lucide-react';
 
 export default function ProfilePage() {
   const [fullName, setFullName] = useState('');
@@ -21,8 +20,8 @@ export default function ProfilePage() {
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [bio, setBio] = useState('');
   const [status, setStatus] = useState('');
+  const [memberId, setMemberId] = useState('');
   const [lifetimeStatus, setLifetimeStatus] = useState('');
-  const [lifetimeMembershipId, setLifetimeMembershipId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const { toast } = useToast();
@@ -38,8 +37,8 @@ export default function ProfilePage() {
       setPortfolioUrl(userData.portfolioUrl || '');
       setBio(userData.bio || '');
       setStatus(userData.status || '');
+      setMemberId(userData.memberId || '');
       setLifetimeStatus(userData.lifetimeStatus || 'not_applied');
-      setLifetimeMembershipId(userData.lifetimeMembershipId || '');
     } else {
       setFullName(user.displayName || '');
       setEmail(user.email || '');
@@ -121,7 +120,7 @@ export default function ProfilePage() {
     // Title
     doc.setFontSize(18);
     doc.setTextColor(105, 20, 40); // Accent color
-    doc.text('Lifetime Membership Card', 105, 55, { align: 'center' });
+    doc.text('Membership Card', 105, 55, { align: 'center' });
     
     // Member Info
     doc.setFontSize(12);
@@ -129,7 +128,7 @@ export default function ProfilePage() {
     doc.setFont('helvetica', 'normal');
     doc.text(`Name: ${fullName}`, 20, 80);
     doc.text(`Email: ${email}`, 20, 90);
-    doc.text(`Membership ID: ${lifetimeMembershipId}`, 20, 100);
+    doc.text(`Membership ID: ${memberId}`, 20, 100);
 
     // QR Code
     try {
@@ -179,6 +178,12 @@ export default function ProfilePage() {
           <CardDescription>Update your personal and professional information here.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {memberId && (
+            <div className="space-y-2">
+              <Label htmlFor="memberId">Member ID</Label>
+              <Input id="memberId" value={memberId} disabled />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
@@ -205,23 +210,35 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lifetime Membership</CardTitle>
-          <CardDescription>Manage your lifetime membership status.</CardDescription>
+          <CardTitle>Membership Status</CardTitle>
+          <CardDescription>Manage your membership status and benefits.</CardDescription>
         </CardHeader>
         <CardContent>
-          {lifetimeStatus === 'not_applied' && (
+          {status === 'active' && (
             <div className="space-y-4">
+                <div className="p-4 bg-secondary rounded-lg">
+                    <p className="font-semibold">Membership Card</p>
+                    <p className="text-sm text-muted-foreground">
+                        Your official membership card is available for download.
+                    </p>
+                </div>
+                <Button onClick={generateMembershipCard}>Download Membership Card</Button>
+            </div>
+          )}
+          {lifetimeStatus === 'not_applied' && status === 'active' && (
+            <div className="space-y-4 mt-6 pt-6 border-t">
+              <h3 className="text-lg font-semibold">Lifetime Membership</h3>
               <p className="text-sm text-muted-foreground">
                 Become a lifetime member to enjoy exclusive benefits and show your long-term support for our community. The application process is quick and subject to manual review and payment processing.
               </p>
               <Button onClick={handleApply} disabled={isApplying}>
-                {isApplying ? 'Submitting...' : 'Apply Now'}
+                {isApplying ? 'Submitting...' : 'Apply for Lifetime Membership'}
               </Button>
             </div>
           )}
           {lifetimeStatus === 'applied' && (
             <div className="p-4 bg-secondary rounded-lg">
-              <p className="font-semibold">Your application is under review.</p>
+              <p className="font-semibold">Your lifetime application is under review.</p>
               <p className="text-sm text-muted-foreground">
                 Thank you for applying! Our team will review your application and contact you regarding payment.
               </p>
@@ -232,10 +249,9 @@ export default function ProfilePage() {
                <div className="p-4 bg-green-100 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg">
                 <p className="font-semibold text-green-800 dark:text-green-200">Congratulations! You are a Lifetime Member.</p>
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  Welcome to an exclusive group of supporters. Download your official membership card below.
+                  Welcome to an exclusive group of supporters. You can re-download your official membership card at any time.
                 </p>
               </div>
-              <Button onClick={generateMembershipCard}>Download Membership Card</Button>
             </div>
           )}
         </CardContent>

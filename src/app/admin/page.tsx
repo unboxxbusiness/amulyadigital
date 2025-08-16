@@ -6,6 +6,8 @@ import { Check, X, Crown } from "lucide-react";
 import { adminAuth, adminDb } from "@/lib/firebase/admin-app";
 import { revalidatePath } from "next/cache";
 import { approveLifetimeMembership } from "@/app/profile/actions";
+import { FieldValue } from "firebase-admin/firestore";
+
 
 type Application = {
     uid: string;
@@ -42,9 +44,46 @@ export default async function AdminPage() {
   async function approveUser(formData: FormData) {
     'use server';
     const uid = formData.get('uid') as string;
+
+    const counterRef = adminDb.collection('counters').doc('memberIdCounter');
+    const userRef = adminDb.collection('users').doc(uid);
+
+    await adminDb.runTransaction(async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+        
+        let newCount;
+        if (!counterDoc.exists) {
+            newCount = 1;
+        } else {
+            const currentYear = new Date().getFullYear();
+            const lastResetYear = counterDoc.data()?.lastResetYear || 0;
+            if (currentYear > lastResetYear) {
+                newCount = 1;
+                transaction.set(counterRef, { count: newCount, lastResetYear: currentYear }, { merge: true });
+            } else {
+                newCount = (counterDoc.data()?.count || 0) + 1;
+            }
+        }
+        
+        const year = new Date().getFullYear();
+        const memberId = `NGO-${year}-${String(newCount).padStart(4, '0')}`;
+        
+        transaction.update(userRef, { 
+            status: 'active',
+            memberId: memberId,
+        });
+
+        if (counterDoc.exists) {
+            transaction.update(counterRef, { count: FieldValue.increment(1) });
+        } else {
+            transaction.set(counterRef, { count: newCount, lastResetYear: year });
+        }
+    });
+
+
     await adminAuth.setCustomUserClaims(uid, { role: 'member', status: 'active' });
-    await adminDb.collection('users').doc(uid).update({ status: 'active' });
     revalidatePath('/admin');
+    revalidatePath('/profile');
   }
 
   async function rejectUser(formData: FormData) {
