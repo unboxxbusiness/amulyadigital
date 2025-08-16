@@ -2,46 +2,55 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Helper functions
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isMember() {
+      return request.auth.token.role == 'member';
     }
 
     function isAdmin() {
       return request.auth.token.role == 'admin';
     }
 
-    // Rules for the 'users' collection
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Users collection
     match /users/{userId} {
-      // Admins can perform any action on any user document
-      allow read, write: if isAdmin();
+      // Admins can read/write any user document
+      // Members can only read/write their own document
+      allow read, write: if isSignedIn() && (isAdmin() || isOwner(userId));
 
-      // Users can only read or update their own document
-      allow get, update: if isOwner(userId);
-      
-      // Prevent users from changing their own role, status, or memberId
-      allow update: if isOwner(userId) && 
-                      !('role' in request.resource.data) &&
-                      !('status' in request.resource.data) &&
-                      !('memberId' in request.resource.data) &&
-                      !('lifetimeMembershipId' in request.resource.data);
-
-      // Users can apply for lifetime membership by setting the status, but cannot approve it
-      allow update: if isOwner(userId) && 
-                      request.resource.data.lifetimeStatus == 'applied' &&
-                      resource.data.lifetimeStatus != 'applied';
-
-      // Users cannot create other user documents
-      allow create: if false;
+      // Disallow users from changing their own role, status, or memberId
+      allow update: if isSignedIn() && isOwner(userId) && !(
+        'role' in request.resource.data && request.resource.data.role != resource.data.role ||
+        'status' in request.resource.data && request.resource.data.status != resource.data.status ||
+        'memberId' in request.resource.data && request.resource.data.memberId != resource.data.memberId ||
+        'lifetimeStatus' in request.resource.data && request.resource.data.lifetimeStatus != resource.data.lifetimeStatus && !isAdmin()
+      );
     }
     
-    // Rules for the 'counters' collection
-    match /counters/{counterId} {
-      // Only admins (specifically, server-side functions with admin privileges) can read or write to counters
-      allow read, write: if isAdmin();
-      
-      // Deny all client-side access
-      allow read, write: if false;
+    // Counter collection for Member IDs
+    match /counters/memberIdCounter {
+      // Only allow server-side (admin) access
+      allow read, write: if false; // Block client-side access
+    }
+
+    // Service Requests collection
+    match /serviceRequests/{requestId} {
+      // Members can create requests for themselves.
+      allow create: if isMember() && request.resource.data.memberId == request.auth.uid;
+      // Members can read their own requests. Admins can read all requests.
+      allow read: if (isMember() && resource.data.memberId == request.auth.uid) || isAdmin();
+      // Only admins can update (approve/reject) requests.
+      allow update: if isAdmin();
+      // Nobody can delete requests for now to maintain history.
+      allow delete: if false;
     }
   }
 }
