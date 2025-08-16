@@ -7,6 +7,8 @@ export async function approveUser(uid: string) {
     const counterRef = adminDb.collection('counters').doc('memberIdCounter');
     const userRef = adminDb.collection('users').doc(uid);
 
+    let memberId = '';
+
     await adminDb.runTransaction(async (transaction) => {
         const counterDoc = await transaction.get(counterRef);
         
@@ -28,7 +30,7 @@ export async function approveUser(uid: string) {
             }
         }
         
-        const memberId = `${prefix}-${currentYear}-${String(newCount).padStart(4, '0')}`;
+        memberId = `${prefix}-${currentYear}-${String(newCount).padStart(4, '0')}`;
         
         transaction.update(userRef, { 
             status: 'active',
@@ -42,7 +44,7 @@ export async function approveUser(uid: string) {
         }
     });
 
-    await adminAuth.setCustomUserClaims(uid, { role: 'member', status: 'active' });
+    await adminAuth.setCustomUserClaims(uid, { role: 'member', status: 'active', memberId: memberId });
     revalidatePath('/admin/applications');
 }
 

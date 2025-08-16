@@ -7,8 +7,8 @@ import { revalidatePath } from "next/cache";
 
 export async function applyForService(formData: FormData) {
   const session = await verifySession();
-  if (!session?.uid) {
-    return { error: "Not authenticated" };
+  if (!session?.uid || !session.memberId) {
+    return { error: "Not authenticated or missing Member ID." };
   }
 
   const serviceName = formData.get('serviceName') as string;
@@ -18,7 +18,8 @@ export async function applyForService(formData: FormData) {
 
   try {
     await adminDb.collection("serviceRequests").add({
-      uid: session.uid, // Add uid to the service request
+      uid: session.uid,
+      memberId: session.memberId,
       serviceName,
       status: "pending",
       createdAt: new Date().toISOString(),
@@ -51,18 +52,42 @@ export async function getMemberServiceRequests() {
 
 
 // Admin Actions
-export async function getAllServiceRequests() {
+export async function getServiceRequestsWithUserDetails() {
     const session = await verifySession();
-    if (session?.role !== 'admin') {
+    if (session?.role !== 'admin' && session?.role !== 'sub-admin') {
         return [];
     }
 
-    const snapshot = await adminDb.collection('serviceRequests').orderBy('createdAt', 'desc').get();
-    if (snapshot.empty) {
+    const requestsSnapshot = await adminDb.collection('serviceRequests').orderBy('createdAt', 'desc').get();
+    if (requestsSnapshot.empty) {
         return [];
     }
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const userIds = [...new Set(requestsSnapshot.docs.map(doc => doc.data().uid))];
+    
+    if (userIds.length === 0) {
+        return [];
+    }
+
+    const usersSnapshot = await adminDb.collection('users').where('uid', 'in', userIds).get();
+    const usersMap = new Map(usersSnapshot.docs.map(doc => [doc.id, doc.data()]));
+
+    return requestsSnapshot.docs.map(doc => {
+        const requestData = doc.data();
+        const userData = usersMap.get(requestData.uid);
+        return {
+            id: doc.id,
+            uid: requestData.uid,
+            name: userData?.displayName || 'N/A',
+            email: userData?.email || 'N/A',
+            memberId: requestData.memberId || 'N/A',
+            serviceName: requestData.serviceName,
+            createdAt: requestData.createdAt,
+            status: requestData.status,
+        };
+    });
 }
+
 
 export async function updateServiceRequestStatus(formData: FormData) {
     const session = await verifySession();

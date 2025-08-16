@@ -13,6 +13,8 @@ import { isAfter, isBefore, isEqual } from "date-fns"
 export type ServiceRequest = {
     id: string;
     memberId: string;
+    name: string;
+    email: string;
     serviceName: string;
     createdAt: string;
     status: "pending" | "approved" | "rejected";
@@ -40,6 +42,14 @@ export const columns: ColumnDef<ServiceRequest>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    accessorKey: "name",
+    header: "Name",
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
   },
   {
     accessorKey: "memberId",

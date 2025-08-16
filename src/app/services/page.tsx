@@ -20,9 +20,13 @@ export default function ServicesPage() {
     const { toast } = useToast();
     const [isPending, startTransition] = useTransition();
     const [requests, setRequests] = useState<ServiceRequest[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getMemberServiceRequests().then(setRequests);
+        getMemberServiceRequests().then(data => {
+            setRequests(data as ServiceRequest[]);
+            setLoading(false);
+        });
     }, []);
 
     const handleApply = (serviceName: string) => {
@@ -32,7 +36,11 @@ export default function ServicesPage() {
             const result = await applyForService(formData);
             if (result.success) {
                 toast({ title: "Success", description: result.message });
-                getMemberServiceRequests().then(setRequests);
+                setLoading(true);
+                getMemberServiceRequests().then(data => {
+                    setRequests(data as ServiceRequest[]);
+                    setLoading(false);
+                });
             } else {
                 toast({ variant: "destructive", title: "Error", description: result.error });
             }
@@ -121,40 +129,44 @@ export default function ServicesPage() {
             <CardDescription>Track the status of your applications for services and benefits.</CardDescription>
         </CardHeader>
         <CardContent>
-             <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {requests.length === 0 ? (
+             {loading ? (
+                <p>Loading requests...</p>
+             ) : (
+                <Table>
+                    <TableHeader>
                         <TableRow>
-                            <TableCell colSpan={3} className="text-center text-muted-foreground">You have not made any service requests.</TableCell>
+                            <TableHead>Service</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
                         </TableRow>
-                    ) : (
-                        requests.map((req) => (
-                             <TableRow key={req.id}>
-                                <TableCell className="font-medium">{req.serviceName}</TableCell>
-                                <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
-                                <TableCell>
-                                    <Badge variant={
-                                        req.status === "pending" ? "secondary" : 
-                                        req.status === "approved" ? "default" : "destructive"
-                                    }
-                                    className={req.status === "approved" ? "bg-accent text-accent-foreground" : ""}
-                                    >
-                                        {req.status}
-                                    </Badge>
-                                </TableCell>
+                    </TableHeader>
+                    <TableBody>
+                        {requests.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center text-muted-foreground">You have not made any service requests.</TableCell>
                             </TableRow>
-                        ))
-                    )}
-                   
-                </TableBody>
-            </Table>
+                        ) : (
+                            requests.map((req) => (
+                                <TableRow key={req.id}>
+                                    <TableCell className="font-medium">{req.serviceName}</TableCell>
+                                    <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            req.status === "pending" ? "secondary" : 
+                                            req.status === "approved" ? "default" : "destructive"
+                                        }
+                                        className={req.status === "approved" ? "bg-accent text-accent-foreground" : ""}
+                                        >
+                                            {req.status}
+                                        </Badge>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    
+                    </TableBody>
+                </Table>
+             )}
         </CardContent>
       </Card>
 

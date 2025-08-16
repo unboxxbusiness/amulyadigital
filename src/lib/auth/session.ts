@@ -9,12 +9,14 @@ export async function createSession(uid: string) {
   const user = await adminAuth.getUser(uid);
   const role = user.customClaims?.role || 'member';
   const status = user.customClaims?.status || 'pending';
+  const memberId = user.customClaims?.memberId || null;
 
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const sessionPayload = {
     uid,
     role,
     status,
+    memberId,
     expires: expires.toISOString(),
   };
 

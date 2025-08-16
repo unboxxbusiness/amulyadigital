@@ -4,11 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DataTable } from "@/components/data-table";
 import { ServiceRequest, columns } from "./columns";
 import { useEffect, useState, useTransition, useCallback } from "react";
-import { adminDb } from "@/lib/firebase/client-app";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { updateServiceRequestsStatus, deleteServiceRequests } from "@/app/services/actions";
+import { updateServiceRequestsStatus, deleteServiceRequests, getServiceRequestsWithUserDetails } from "@/app/services/actions";
 
 export default function ServiceRequestsPage() {
     const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
@@ -18,20 +16,21 @@ export default function ServiceRequestsPage() {
     const { toast } = useToast();
 
     useEffect(() => {
-        const requestsCollection = collection(adminDb, 'serviceRequests');
-        const q = query(requestsCollection, orderBy('createdAt', 'desc'));
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const requests: ServiceRequest[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRequest));
-            setServiceRequests(requests);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error fetching service requests:", error);
-            setLoading(false);
-        });
+        const fetchRequests = async () => {
+            setLoading(true);
+            try {
+                const requests = await getServiceRequestsWithUserDetails();
+                setServiceRequests(requests);
+            } catch (error) {
+                console.error("Error fetching service requests:", error);
+                toast({ variant: "destructive", title: "Error", description: "Failed to load service requests." });
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRequests();
+    }, [toast]);
 
-        return () => unsubscribe();
-    }, []);
 
     const handleBulkAction = (action: 'approve' | 'reject' | 'delete') => {
         startTransition(async () => {
@@ -44,6 +43,8 @@ export default function ServiceRequestsPage() {
 
             if (result.success) {
                 toast({ title: "Success", description: `Selected requests have been ${action}d.` });
+                 // Refetch data after action
+                getServiceRequestsWithUserDetails().then(setServiceRequests);
             } else {
                 toast({ variant: "destructive", title: "Error", description: result.error });
             }
@@ -106,8 +107,8 @@ export default function ServiceRequestsPage() {
                         <DataTable 
                             columns={columns} 
                             data={serviceRequests}
-                            filterColumnId="memberId"
-                            filterPlaceholder="Filter by Member ID..."
+                            filterColumnId="name"
+                            filterPlaceholder="Filter by member name..."
                             dateFilterColumnId="createdAt"
                             onRowSelectionChange={onRowSelectionChange}
                             bulkActions={bulkActions}
