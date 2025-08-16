@@ -3,6 +3,10 @@ import type {NextRequest} from 'next/server';
 import {decrypt} from '@/lib/auth/session';
 import {adminAuth} from '@/lib/firebase/admin-app';
 
+export const config = {
+  matcher: ['/admin/:path*', '/profile', '/application', '/', '/sign-in', '/sign-up'],
+};
+
 export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session')?.value;
   const decryptedSession = await decrypt(sessionCookie);
@@ -39,7 +43,3 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: ['/admin/:path*', '/profile', '/application', '/', '/sign-in', '/sign-up'],
-};
