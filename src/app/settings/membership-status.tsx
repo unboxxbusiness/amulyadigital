@@ -1,3 +1,4 @@
+
 'use client';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -157,7 +158,7 @@ export function MembershipStatus() {
           <div className="space-y-4 pt-6 border-t">
             <h3 className="text-lg font-semibold">5-Year Lifetime Membership</h3>
             <p className="text-sm text-muted-foreground">
-              Become a lifetime member for 5 years to enjoy exclusive benefits. The cost is ₹1000, payable offline. After applying, an admin will contact you to arrange payment.
+              Become a lifetime member for 5 years to enjoy exclusive benefits. The cost is ₹1,000 INR, payable offline. After applying, an admin will contact you to arrange payment.
             </p>
             <Button onClick={handleApply} disabled={isApplying}>
               {isApplying ? 'Submitting...' : 'Apply for 5-Year Membership'}
@@ -169,7 +170,7 @@ export function MembershipStatus() {
           <div className="p-4 bg-secondary rounded-lg">
             <p className="font-semibold">Your lifetime application is under review.</p>
             <p className="text-sm text-muted-foreground">
-              Thank you for applying! Our team will review your application and contact you regarding the offline payment of ₹1000.
+              Thank you for applying! Our team will review your application and contact you regarding the offline payment of ₹1,000 INR.
             </p>
           </div>
         )}
