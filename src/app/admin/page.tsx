@@ -68,18 +68,6 @@ export default async function AdminDashboardPage() {
         <MembersChart allMembersData={JSON.parse(JSON.stringify(allMembersData))} />
         <RequestsChart serviceRequestsData={serviceRequestsData} />
       </div>
-      
-      <Card>
-        <CardHeader>
-            <CardTitle>Welcome to the Admin Dashboard</CardTitle>
-            <CardDescription>
-                Use the sidebar navigation to manage different aspects of your organization. You can review membership applications, handle service requests, and manage administrative users.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <p>This central dashboard provides a quick overview of your community's activity. As your organization grows, you'll see these numbers reflect that growth.</p>
-        </CardContent>
-      </Card>
 
     </div>
   )
