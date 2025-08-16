@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {LifeBuoy, Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake, Settings} from 'lucide-react';
+import {LifeBuoy, Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake, Settings, Inbox} from 'lucide-react';
 
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
 import {useEffect, useState} from 'react';
@@ -19,6 +19,7 @@ const memberNavItems = [
 
 const adminNavItems = [
   {href: '/admin', label: 'Dashboard', icon: LayoutDashboard},
+  {href: '/admin/inbox', label: 'Inbox', icon: Inbox},
   {href: '/admin/management', label: 'Admin Management', icon: UserPlus, adminOnly: true },
   {href: '/admin/applications', label: 'Membership Applications', icon: Users},
   {href: '/admin/lifetime', label: 'Lifetime Requests', icon: Crown},

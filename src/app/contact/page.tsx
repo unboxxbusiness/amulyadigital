@@ -9,10 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase/client-app";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { submitContactForm } from "./actions";
 
 export default function ContactPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -22,14 +24,27 @@ export default function ContactPage() {
     return () => unsubscribe();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for contacting us. We will get back to you shortly.",
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      const result = await submitContactForm(formData);
+      if (result.success) {
+        toast({
+          title: "Message Sent!",
+          description: result.message,
+        });
+        form.reset();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.error,
+        });
+      }
     });
-     const form = e.target as HTMLFormElement;
-     form.reset();
   };
 
 
@@ -51,11 +66,11 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" placeholder="Your Name" defaultValue={user?.displayName || ''} required />
+                <Input name="name" id="name" placeholder="Your Name" defaultValue={user?.displayName || ''} required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="your@email.com" defaultValue={user?.email || ''} required readOnly />
+                <Input name="email" id="email" type="email" placeholder="your@email.com" defaultValue={user?.email || ''} required readOnly />
               </div>
             </div>
              <div className="space-y-2">
@@ -74,11 +89,13 @@ export default function ContactPage() {
             </div>
              <div className="space-y-2">
               <Label htmlFor="message">Message</Label>
-              <Textarea id="message" placeholder="Please describe your issue or question in detail." rows={6} required />
+              <Textarea name="message" id="message" placeholder="Please describe your issue or question in detail." rows={6} required />
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit">Send Message</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? 'Sending...' : 'Send Message'}
+            </Button>
           </CardFooter>
         </form>
       </Card>
