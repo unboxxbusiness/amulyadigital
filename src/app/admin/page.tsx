@@ -2,16 +2,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X } from "lucide-react";
+import { Check, X, Crown } from "lucide-react";
 import { adminAuth, adminDb } from "@/lib/firebase/admin-app";
 import { revalidatePath } from "next/cache";
+import { approveLifetimeMembership } from "@/app/profile/actions";
+
+type Application = {
+    uid: string;
+    name: string;
+    email: string;
+    submitted: Date;
+    status: string;
+    lifetimeStatus?: 'not_applied' | 'applied' | 'approved';
+}
 
 async function getApplications() {
     const snapshot = await adminDb.collection('users').where('role', '==', 'member').get();
     if (snapshot.empty) {
         return [];
     }
-    const applications = snapshot.docs.map(doc => {
+    const applications: Application[] = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
             uid: doc.id,
@@ -19,6 +29,7 @@ async function getApplications() {
             email: data.email || "N/A",
             submitted: data.createdAt ? new Date(data.createdAt) : new Date(),
             status: data.status || "pending",
+            lifetimeStatus: data.lifetimeStatus || 'not_applied'
         };
     });
     return applications;
@@ -26,6 +37,7 @@ async function getApplications() {
 
 export default async function AdminPage() {
   const applications = await getApplications();
+  const lifetimeApplications = applications.filter(app => app.lifetimeStatus === 'applied');
 
   async function approveUser(formData: FormData) {
     'use server';
@@ -105,6 +117,50 @@ export default async function AdminPage() {
                                         </form>
                                     </div>
                                 )}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle>Lifetime Membership Requests</CardTitle>
+            <CardDescription>
+                Review and approve applications for lifetime membership.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Applicant</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                     {lifetimeApplications.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                No pending applications.
+                            </TableCell>
+                        </TableRow>
+                    )}
+                    {lifetimeApplications.map((app) => (
+                        <TableRow key={app.uid}>
+                            <TableCell>{app.name}</TableCell>
+                            <TableCell>{app.email}</TableCell>
+                            <TableCell className="text-right">
+                                <form action={approveLifetimeMembership}>
+                                    <input type="hidden" name="uid" value={app.uid} />
+                                    <Button variant="outline" size="sm" type="submit">
+                                        <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                                        Approve Lifetime
+                                    </Button>
+                                </form>
                             </TableCell>
                         </TableRow>
                     ))}
