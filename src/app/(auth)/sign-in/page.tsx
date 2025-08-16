@@ -1,3 +1,4 @@
+
 'use client';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
@@ -14,13 +15,27 @@ import {useRouter} from 'next/navigation';
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const {toast} = useToast();
   const router = useRouter();
 
+  const handleFirebaseAuthErrors = (errorCode: string) => {
+    switch (errorCode) {
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please try again.';
+      case 'auth/user-not-found':
+        return 'No account found with this email address.';
+      case 'auth/wrong-password':
+        return 'Incorrect password. Please try again.';
+      default:
+        return 'An unexpected error occurred. Please try again later.';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setIsLoading(true);
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const {user} = userCredential;
@@ -28,24 +43,29 @@ export default function SignInPage() {
       const result = await createSessionAction(user.uid);
 
       if (result.error) {
-        setError(result.error);
         toast({
           variant: 'destructive',
           title: 'Sign In Failed',
           description: result.error,
         });
+        setIsLoading(false);
         return;
       }
+
+      toast({
+        title: 'Sign In Successful',
+        description: "Welcome back! You're being redirected...",
+      });
       // Manually redirect on the client-side
       router.push(result.redirectPath!);
     } catch (error: any) {
-      const errorMessage = error.message || 'An unexpected error occurred.';
-      setError(errorMessage);
+      const friendlyMessage = handleFirebaseAuthErrors(error.code);
       toast({
         variant: 'destructive',
         title: 'Sign In Failed',
-        description: errorMessage,
+        description: friendlyMessage,
       });
+      setIsLoading(false);
     }
   };
 
@@ -60,17 +80,31 @@ export default function SignInPage() {
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={e => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                disabled={isLoading}
+              />
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col">
-            <Button className="w-full" type="submit">
-              Sign In
+            <Button className="w-full" type="submit" disabled={isLoading}>
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
