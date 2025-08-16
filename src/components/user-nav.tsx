@@ -10,10 +10,17 @@ import { auth } from '@/lib/firebase/client-app';
 
 export function UserNav() {
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        const idTokenResult = await currentUser.getIdTokenResult(true);
+        setUserRole(idTokenResult.claims.role as string);
+      } else {
+        setUserRole(null);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -25,6 +32,9 @@ export function UserNav() {
       </Link>
     );
   }
+
+  const profileUrl = userRole === 'admin' || userRole === 'sub-admin' ? '/admin/settings' : '/profile';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -44,7 +54,7 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/profile">
+          <Link href={profileUrl}>
             <DropdownMenuItem>Profile</DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
