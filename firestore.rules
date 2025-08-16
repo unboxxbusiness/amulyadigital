@@ -2,16 +2,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Admins can read and write all data
-    match /{document=**} {
-      allow read, write: if request.auth.token.role == 'admin';
+
+    // Helper function to check if a user is an admin
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Users can only manage their own user document
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
-      allow create: if request.auth.uid != null;
+      // Admins can read and write any user document
+      allow read, write: if isAdmin();
+      
+      // A user can read and update their own document, but not delete it or change their role/status
+      allow read: if request.auth.uid == userId;
+      allow update: if request.auth.uid == userId
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.status == resource.data.status;
+      
+      // New users can create their own document
+      allow create: if request.auth.uid == userId;
     }
   }
 }

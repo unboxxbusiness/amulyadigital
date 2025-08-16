@@ -1,4 +1,3 @@
-
 'use client';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
@@ -6,27 +5,47 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import Link from 'next/link';
 import {useState} from 'react';
-import {signInWithEmailAndPassword} from 'firebase/auth';
+import {signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
 import {auth} from '@/lib/firebase/client-app';
-import {createSessionAction} from '../actions';
+import {createSessionAction, signInWithGoogle} from '../actions';
 import {useToast} from '@/hooks/use-toast';
 import {useRouter} from 'next/navigation';
+
+const GoogleIcon = () => (
+  <svg className="size-4" viewBox="0 0 48 48">
+    <path
+      fill="#FFC107"
+      d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+    ></path>
+    <path
+      fill="#FF3D00"
+      d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+    ></path>
+    <path
+      fill="#4CAF50"
+      d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+    ></path>
+    <path
+      fill="#1976D2"
+      d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.37,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+    ></path>
+  </svg>
+);
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const {toast} = useToast();
   const router = useRouter();
 
   const handleFirebaseAuthErrors = (errorCode: string) => {
     switch (errorCode) {
       case 'auth/invalid-credential':
-        return 'Invalid email or password. Please try again.';
       case 'auth/user-not-found':
-        return 'No account found with this email address.';
       case 'auth/wrong-password':
-        return 'Incorrect password. Please try again.';
+        return 'Invalid email or password. Please try again.';
       default:
         return 'An unexpected error occurred. Please try again later.';
     }
@@ -43,41 +62,57 @@ export default function SignInPage() {
       const result = await createSessionAction(user.uid);
 
       if (result.error) {
-        toast({
-          variant: 'destructive',
-          title: 'Sign In Failed',
-          description: result.error,
-        });
+        toast({variant: 'destructive', title: 'Sign In Failed', description: result.error});
         setIsLoading(false);
         return;
       }
 
-      toast({
-        title: 'Sign In Successful',
-        description: "Welcome back! You're being redirected...",
-      });
-      // Manually redirect on the client-side
+      toast({title: 'Sign In Successful', description: "Welcome back! You're being redirected..."});
       router.push(result.redirectPath!);
     } catch (error: any) {
-      const friendlyMessage = handleFirebaseAuthErrors(error.code);
+      if (error.code && error.code.startsWith('auth/')) {
+        const friendlyMessage = handleFirebaseAuthErrors(error.code);
+        toast({variant: 'destructive', title: 'Sign In Failed', description: friendlyMessage});
+      } else {
+        toast({variant: 'destructive', title: 'Sign In Failed', description: 'An unexpected error occurred.'});
+      }
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const result = await signInWithGoogle(userCredential.user);
+
+      if (result.error) {
+        toast({variant: 'destructive', title: 'Google Sign In Failed', description: result.error});
+        setIsGoogleLoading(false);
+        return;
+      }
+      toast({title: 'Sign In Successful', description: "Welcome! You're being redirected..."});
+      router.push(result.redirectPath!);
+    } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Sign In Failed',
-        description: friendlyMessage,
+        title: 'Google Sign In Failed',
+        description: 'Could not complete sign in with Google. Please try again.',
       });
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-sm">
-        <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle className="text-2xl">Sign In</CardTitle>
-            <CardDescription>Enter your email below to sign in to your account.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-4">
+        <CardHeader>
+          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardDescription>Enter your email below to sign in to your account.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -87,7 +122,7 @@ export default function SignInPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -98,22 +133,38 @@ export default function SignInPage() {
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col">
-            <Button className="w-full" type="submit" disabled={isLoading}>
+            <Button className="w-full" type="submit" disabled={isLoading || isGoogleLoading}>
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/sign-up" className="underline">
-                Sign up
-              </Link>
+          </form>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
             </div>
-          </CardFooter>
-        </form>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogleSignIn}
+            disabled={isLoading || isGoogleLoading}
+          >
+            {isGoogleLoading ? 'Signing in...' : <><GoogleIcon /> Google</>}
+          </Button>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <div className="text-center text-sm">
+            Don&apos;t have an account?{' '}
+            <Link href="/sign-up" className="underline">
+              Sign up
+            </Link>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   );

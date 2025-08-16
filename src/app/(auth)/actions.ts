@@ -1,4 +1,5 @@
 'use server';
+import {UserCredential} from 'firebase/auth';
 import {adminAuth, adminDb} from '@/lib/firebase/admin-app';
 import {createSession} from '@/lib/auth/session';
 import {deleteSession} from '@/lib/auth/session-edge';
@@ -44,7 +45,55 @@ export async function signUp(formData: FormData) {
     revalidatePath('/');
     redirect(isSuperAdmin ? '/admin' : '/application');
   } catch (error: any) {
+    if (error.digest?.startsWith('NEXT_REDIRECT')) {
+      throw error;
+    }
     return {error: error.message};
+  }
+}
+
+export async function signInWithGoogle(user: UserCredential['user']) {
+  try {
+    const {uid, email, displayName, photoURL} = user;
+
+    // Check if user exists in Firestore
+    const userDocRef = adminDb.collection('users').doc(uid);
+    const userDoc = await userDocRef.get();
+
+    let role = 'member';
+    let status = 'pending';
+
+    if (userDoc.exists) {
+      // User exists, get their role and status
+      const existingData = userDoc.data();
+      role = existingData?.role || 'member';
+      status = existingData?.status || 'pending';
+    } else {
+      // New user, create document in Firestore
+      const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
+      role = isSuperAdmin ? 'admin' : 'member';
+      status = isSuperAdmin ? 'active' : 'pending';
+
+      await adminAuth.setCustomUserClaims(uid, {role, status});
+      await userDocRef.set({
+        uid,
+        email,
+        displayName: displayName || email?.split('@')[0],
+        photoURL: photoURL || '',
+        role,
+        status,
+        createdAt: new Date().toISOString(),
+        portfolioUrl: '',
+        bio: '',
+      });
+    }
+
+    await createSession(uid);
+    revalidatePath('/');
+    return {redirectPath: role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/'};
+  } catch (error: any) {
+    console.error('Error in signInWithGoogle:', error);
+    return {error: 'An error occurred during Google Sign-In.'};
   }
 }
 
@@ -53,8 +102,9 @@ export async function createSessionAction(uid: string) {
     await createSession(uid);
     const user = await adminAuth.getUser(uid);
     const role = user.customClaims?.role;
+    const status = user.customClaims?.status;
     revalidatePath('/');
-    const redirectPath = role === 'admin' ? '/admin' : '/';
+    const redirectPath = role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/';
     return {redirectPath};
   } catch (error: any) {
     return {error: error.message};
