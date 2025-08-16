@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {Megaphone, User, FileText, LifeBuoy, Mail, Shield, Handshake} from 'lucide-react';
+import {Megaphone, LifeBuoy, Mail, Shield, Handshake} from 'lucide-react';
 
 import {cn} from '@/lib/utils';
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
@@ -18,8 +18,6 @@ const defaultNavItems = [
 
 const memberNavItems = [
   {href: '/', label: 'Dashboard', icon: Megaphone},
-  {href: '/profile', label: 'Profile', icon: User},
-  {href: '/application', label: 'Application', icon: FileText},
   {href: '/services', label: 'Services', icon: Handshake},
   ...defaultNavItems,
 ];
