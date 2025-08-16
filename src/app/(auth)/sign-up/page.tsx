@@ -4,7 +4,7 @@ import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} f
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import Link from 'next/link';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {signUp, signInWithGoogle} from '../actions';
 import {useToast} from '@/hooks/use-toast';
 import {GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
@@ -35,8 +35,11 @@ const GoogleIcon = () => (
 export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [email, setEmail] = useState('');
   const {toast} = useToast();
   const router = useRouter();
+
+  const isSuperAdminEmail = email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
 
   const handleFirebaseAuthErrors = (errorCode: string) => {
     switch (errorCode) {
@@ -60,11 +63,10 @@ export default function SignUpPage() {
       const result = await signUp(formData);
 
       if (result?.error) {
-        const friendlyMessage = handleFirebaseAuthErrors(result.error);
         toast({
           variant: 'destructive',
           title: 'Sign Up Failed',
-          description: friendlyMessage,
+          description: result.error,
         });
       } else {
         toast({
@@ -73,7 +75,10 @@ export default function SignUpPage() {
         });
       }
     } catch (error: any) {
-      if (!error.digest?.startsWith('NEXT_REDIRECT')) {
+      if (error.digest?.startsWith('NEXT_REDIRECT')) {
+        // This is not an actual error, but Next.js's way of redirecting.
+        // We don't need to show a toast or do anything.
+      } else {
         toast({
           variant: 'destructive',
           title: 'Sign Up Failed',
@@ -114,7 +119,11 @@ export default function SignUpPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Sign Up</CardTitle>
-          <CardDescription>Enter your information to create an account.</CardDescription>
+          <CardDescription>
+            {isSuperAdminEmail 
+              ? "Creating Super Admin account." 
+              : "Enter your information to create an account."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <form onSubmit={handleSubmit} className="grid gap-4">
@@ -126,6 +135,8 @@ export default function SignUpPage() {
                 type="email"
                 placeholder="m@example.com"
                 required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 disabled={isLoading || isGoogleLoading}
               />
             </div>

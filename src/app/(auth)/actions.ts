@@ -11,11 +11,10 @@ export async function signUp(formData: FormData) {
   const password = formData.get('password') as string;
 
   try {
-    const superAdminUsers = await adminAuth.listUsers();
-    const superAdmins = superAdminUsers.users.filter(user => user.customClaims?.role === 'admin');
+    const superAdminUsers = await adminDb.collection('users').where('role', '==', 'admin').get();
     const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
-
-    if (isSuperAdmin && superAdmins.length > 0) {
+    
+    if (isSuperAdmin && !superAdminUsers.empty) {
       return {error: 'A super admin already exists.'};
     }
 
@@ -71,8 +70,16 @@ export async function signInWithGoogle(user: UserCredential['user']) {
     } else {
       // New user, create document in Firestore
       const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
-      role = isSuperAdmin ? 'admin' : 'member';
-      status = isSuperAdmin ? 'active' : 'pending';
+      const superAdminUsers = await adminDb.collection('users').where('role', '==', 'admin').get();
+
+      if (isSuperAdmin && !superAdminUsers.empty) {
+        // A super admin already exists, sign this user in as a regular member
+        role = 'member';
+        status = 'pending';
+      } else {
+        role = isSuperAdmin ? 'admin' : 'member';
+        status = isSuperAdmin ? 'active' : 'pending';
+      }
 
       await adminAuth.setCustomUserClaims(uid, {role, status});
       await userDocRef.set({
@@ -104,7 +111,7 @@ export async function createSessionAction(uid: string) {
     const role = user.customClaims?.role;
     const status = user.customClaims?.status;
     revalidatePath('/');
-    const redirectPath = role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/';
+    const redirectPath = (role === 'admin' || role === 'sub-admin') ? '/admin' : status === 'pending' ? '/application' : '/';
     return {redirectPath};
   } catch (error: any) {
     return {error: error.message};

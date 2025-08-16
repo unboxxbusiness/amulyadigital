@@ -1,14 +1,17 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, Crown } from "lucide-react";
+import { Check, X, Crown, UserPlus } from "lucide-react";
 import { adminAuth, adminDb } from "@/lib/firebase/admin-app";
 import { revalidatePath } from "next/cache";
 import { approveLifetimeMembership } from "@/app/profile/actions";
 import { FieldValue } from "firebase-admin/firestore";
 import { updateServiceRequestStatus, getAllServiceRequests } from "../services/actions";
-
+import { verifySession } from "@/lib/auth/session";
+import { createSubAdmin } from "./actions";
 
 type Application = {
     uid: string;
@@ -17,6 +20,12 @@ type Application = {
     submitted: Date;
     status: string;
     lifetimeStatus?: 'not_applied' | 'applied' | 'approved';
+}
+
+type AdminUser = {
+    uid: string;
+    email: string;
+    role: string;
 }
 
 async function getApplications() {
@@ -38,10 +47,28 @@ async function getApplications() {
     return applications;
 }
 
+async function getAdminUsers() {
+    const adminsSnapshot = await adminDb.collection('users').where('role', 'in', ['admin', 'sub-admin']).get();
+    if (adminsSnapshot.empty) {
+        return [];
+    }
+    return adminsSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            uid: doc.id,
+            email: data.email,
+            role: data.role,
+        };
+    });
+}
+
+
 export default async function AdminPage() {
+  const session = await verifySession();
   const applications = await getApplications();
   const lifetimeApplications = applications.filter(app => app.lifetimeStatus === 'applied');
   const serviceRequests = await getAllServiceRequests();
+  const adminUsers = session?.role === 'admin' ? await getAdminUsers() : [];
 
   async function approveUser(formData: FormData) {
     'use server';
@@ -103,6 +130,50 @@ export default async function AdminPage() {
         <h1 className="text-3xl font-bold tracking-tight font-headline">Admin Dashboard</h1>
         <p className="text-muted-foreground">Manage membership applications and support requests.</p>
       </div>
+      
+      {session?.role === 'admin' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Management</CardTitle>
+            <CardDescription>Create and manage sub-admin accounts.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+             <form action={createSubAdmin} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" name="email" type="email" placeholder="admin@example.com" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" name="password" type="password" required />
+                </div>
+                 <Button type="submit">
+                    <UserPlus className="mr-2 h-4 w-4" /> Create Sub-Admin
+                 </Button>
+            </form>
+             <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Admin Email</TableHead>
+                        <TableHead>Role</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {adminUsers.map((user) => (
+                        <TableRow key={user.uid}>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                                 <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                    {user.role}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

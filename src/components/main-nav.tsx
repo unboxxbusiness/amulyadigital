@@ -39,7 +39,7 @@ export function MainNav() {
         try {
           const idTokenResult = await user.getIdTokenResult(true); // Force refresh
           const role = idTokenResult.claims.role;
-          if (role === 'admin') {
+          if (role === 'admin' || role === 'sub-admin') {
             setNavItems(adminNavItems);
           } else {
             setNavItems(memberNavItems);
