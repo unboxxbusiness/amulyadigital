@@ -7,14 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ArrowUpDown, MoreHorizontal, Check, X } from "lucide-react"
 import { approveUser, rejectUser } from "./actions"
 import { Checkbox } from "@/components/ui/checkbox"
-
-export type Application = {
-  uid: string;
-  name: string;
-  email: string;
-  submitted: Date;
-  status: string;
-}
+import type { Application } from "./page"
 
 export const columns: ColumnDef<Application>[] = [
   {
@@ -60,6 +53,13 @@ export const columns: ColumnDef<Application>[] = [
                 <div className="text-sm text-muted-foreground">{application.email}</div>
             </div>
         )
+    }
+  },
+  {
+    accessorKey: "memberId",
+    header: "Member ID",
+    cell: ({ row }) => {
+      return <div>{row.original.memberId || "N/A"}</div>
     }
   },
   {

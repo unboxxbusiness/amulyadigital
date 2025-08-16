@@ -1,6 +1,6 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { columns, Application } from "./columns";
+import { columns } from "./columns";
 import { DataTable } from "@/components/data-table";
 import { useEffect, useState, useTransition, useCallback } from "react";
 import { adminDb } from "@/lib/firebase/client-app";
@@ -8,6 +8,15 @@ import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { approveUsers, rejectUsers } from "./actions";
+
+export type Application = {
+  uid: string;
+  name: string;
+  email: string;
+  submitted: Date;
+  status: string;
+  memberId?: string;
+}
 
 export default function MembershipApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -29,6 +38,7 @@ export default function MembershipApplicationsPage() {
           email: data.email || "N/A",
           submitted: data.createdAt ? new Date(data.createdAt) : new Date(),
           status: data.status || "pending",
+          memberId: data.memberId || "",
         };
       });
       setApplications(fetchedApplications);
