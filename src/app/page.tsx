@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Clock, FileText, User } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { logSiteVisit } from "./admin/actions";
+import { format } from 'date-fns';
 
 export default async function DashboardPage() {
   const { user, serviceRequests } = await getDashboardData();
@@ -84,8 +85,11 @@ export default async function DashboardPage() {
               <div className="text-2xl font-bold">
                  <Badge className="text-lg bg-accent text-accent-foreground">{user.status === 'active' ? 'Batch Member' : 'Pending'}</Badge>
               </div>
-               <p className="text-xs text-muted-foreground">
-                {user.lifetimeStatus === 'approved' ? 'Lifetime Member' : ''}
+               <p className="text-xs text-muted-foreground mt-1">
+                {user.lifetimeStatus === 'approved' 
+                    ? `Lifetime Member (Expires: ${format(new Date(user.lifetimeExpiry as string), "PPP")})`
+                    : ''
+                }
               </p>
             </CardContent>
           </Card>

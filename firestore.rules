@@ -5,46 +5,54 @@ service cloud.firestore {
 
     // Helper function to check if a user is an admin or sub-admin
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'sub-admin'];
-    }
-
-    // Helper function to check if a user is a super-admin
-    function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // Users collection rules
-    match /users/{userId} {
-      // Admins can read/write any user document
-      allow read, write: if isAdmin();
-      // Authenticated users can read and update their own document
-      allow get, update: if request.auth.uid == userId;
-      // Allow user creation during signup
-      allow create: if request.auth.uid != null;
-    }
-
-    // Service Requests collection rules
-    match /serviceRequests/{requestId} {
-       // Admins can read and write all service requests
-      allow read, write: if isAdmin();
-      // Authenticated users can create requests
-      allow create: if request.auth.uid != null;
-      // Users can only read their own service requests
-      allow list: if request.auth.uid != null && request.query.where[0][2] == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberId;
+      return request.auth.token.role == 'admin' || request.auth.token.role == 'sub-admin';
     }
     
-    // Counters collection rules (for member IDs)
-    match /counters/{counterId} {
-       // Only super-admins can read and write counters
-      allow read, write: if isSuperAdmin();
+    // Helper function to check if a user is a super-admin
+    function isSuperAdmin() {
+      return request.auth.token.role == 'admin';
     }
 
-    // Site Visits collection rules
+    // Users collection
+    match /users/{userId} {
+      // Any authenticated user can create their own user document
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Users can read their own data. Admins can read any user's data.
+      allow read: if request.auth.uid == userId || isAdmin();
+      // Users can update their own displayName, portfolioUrl, and bio
+      // Admins can update status, memberId, and lifetime statuses
+      allow update: if request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'portfolioUrl', 'bio', 'lifetimeStatus'])
+                  || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'memberId', 'lifetimeStatus', 'paymentTransactionId', 'lifetimeStartDate', 'lifetimeExpiry']));
+      // Only a super admin can delete a user (rejecting an application)
+      allow delete: if isSuperAdmin();
+    }
+
+    // Service Requests collection
+    match /serviceRequests/{requestId} {
+      // Authenticated members can create requests
+      allow create: if request.auth != null && request.auth.token.role == 'member';
+      // Members can read their own requests. Admins can read all requests.
+      allow read: if isAdmin() || (request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberId == resource.data.memberId);
+      // Admins can update the status of requests
+      allow update: if isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      // No one can delete service requests
+      allow delete: if false;
+    }
+    
+    // Counters collection (for member IDs)
+    match /counters/{counterId} {
+      // Only admins can read, create, or update counters
+      allow read, write: if isSuperAdmin();
+    }
+    
+    // Site Visits collection
     match /siteVisits/{visitId} {
-      // Anyone can create a visit record to allow tracking
-      allow create: if true;
-      // Only admins can read the visit records
-      allow read: if isAdmin();
+        // Any authenticated user can create a site visit log
+        allow create: if request.auth != null;
+        // Only admins can read the collection
+        allow read: if isAdmin();
+        // No one can update or delete visit logs
+        allow update, delete: if false;
     }
   }
 }

@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { applyForLifetimeMembership } from './actions';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
+import { format } from 'date-fns';
 
 export default function ProfilePage() {
   const [fullName, setFullName] = useState('');
@@ -22,6 +23,8 @@ export default function ProfilePage() {
   const [status, setStatus] = useState('');
   const [memberId, setMemberId] = useState('');
   const [lifetimeStatus, setLifetimeStatus] = useState('');
+  const [lifetimeExpiry, setLifetimeExpiry] = useState('');
+  const [paymentTransactionId, setPaymentTransactionId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isApplying, setIsApplying] = useState(false);
   const { toast } = useToast();
@@ -39,6 +42,8 @@ export default function ProfilePage() {
       setStatus(userData.status || '');
       setMemberId(userData.memberId || '');
       setLifetimeStatus(userData.lifetimeStatus || 'not_applied');
+      setLifetimeExpiry(userData.lifetimeExpiry || '');
+      setPaymentTransactionId(userData.paymentTransactionId || '');
     } else {
       setFullName(user.displayName || '');
       setEmail(user.email || '');
@@ -129,6 +134,13 @@ export default function ProfilePage() {
     doc.text(`Name: ${fullName}`, 20, 80);
     doc.text(`Email: ${email}`, 20, 90);
     doc.text(`Membership ID: ${memberId}`, 20, 100);
+    if (lifetimeStatus === 'approved') {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Status: Lifetime Member`, 20, 110);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Expires: ${format(new Date(lifetimeExpiry), "PPP")}`, 20, 120);
+    }
+
 
     // QR Code
     try {
@@ -225,32 +237,36 @@ export default function ProfilePage() {
                 <Button onClick={generateMembershipCard}>Download Membership Card</Button>
             </div>
           )}
+
           {lifetimeStatus === 'not_applied' && status === 'active' && (
             <div className="space-y-4 mt-6 pt-6 border-t">
-              <h3 className="text-lg font-semibold">Lifetime Membership</h3>
+              <h3 className="text-lg font-semibold">5-Year Lifetime Membership</h3>
               <p className="text-sm text-muted-foreground">
-                Become a lifetime member to enjoy exclusive benefits and show your long-term support for our community. The application process is quick and subject to manual review and payment processing.
+                Become a lifetime member for 5 years to enjoy exclusive benefits. The cost is ₹1000, payable offline. After applying, an admin will contact you to arrange payment.
               </p>
               <Button onClick={handleApply} disabled={isApplying}>
-                {isApplying ? 'Submitting...' : 'Apply for Lifetime Membership'}
+                {isApplying ? 'Submitting...' : 'Apply for 5-Year Membership'}
               </Button>
             </div>
           )}
+
           {lifetimeStatus === 'applied' && (
             <div className="p-4 bg-secondary rounded-lg">
               <p className="font-semibold">Your lifetime application is under review.</p>
               <p className="text-sm text-muted-foreground">
-                Thank you for applying! Our team will review your application and contact you regarding payment.
+                Thank you for applying! Our team will review your application and contact you regarding the offline payment of ₹1000.
               </p>
             </div>
           )}
+
           {lifetimeStatus === 'approved' && (
              <div className="space-y-4">
                <div className="p-4 bg-green-100 dark:bg-green-900/50 border border-green-200 dark:border-green-800 rounded-lg">
                 <p className="font-semibold text-green-800 dark:text-green-200">Congratulations! You are a Lifetime Member.</p>
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  Welcome to an exclusive group of supporters. You can re-download your official membership card at any time.
-                </p>
+                <div className="text-sm text-green-700 dark:text-green-300 space-y-1 mt-2">
+                  <p><strong>Expires on:</strong> {format(new Date(lifetimeExpiry), "PPP")}</p>
+                  <p><strong>Transaction ID:</strong> {paymentTransactionId}</p>
+                </div>
               </div>
             </div>
           )}

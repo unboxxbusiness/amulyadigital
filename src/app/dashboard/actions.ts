@@ -10,6 +10,8 @@ type UserData = {
     status: string;
     memberId: string;
     lifetimeStatus: string;
+    lifetimeExpiry?: string;
+    paymentTransactionId?: string;
 }
 
 type ServiceRequest = {
@@ -53,7 +55,9 @@ export async function getDashboardData(): Promise<{ user: UserData | null, servi
                 email: userData.email || '',
                 status: userData.status || '',
                 memberId: userData.memberId || '',
-                lifetimeStatus: userData.lifetimeStatus || 'not_applied'
+                lifetimeStatus: userData.lifetimeStatus || 'not_applied',
+                lifetimeExpiry: userData.lifetimeExpiry || '',
+                paymentTransactionId: userData.paymentTransactionId || '',
             },
             serviceRequests,
         };

@@ -1,10 +1,19 @@
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
-import { columns, LifetimeApplication } from "./columns";
+import { columns } from "./columns";
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { adminDb } from "@/lib/firebase/client-app";
+
+export type LifetimeApplication = {
+    uid: string;
+    name: string;
+    email: string;
+    lifetimeStatus: 'not_applied' | 'applied' | 'approved';
+    lifetimeExpiry?: string;
+    paymentTransactionId?: string;
+}
 
 export default function LifetimeMembershipPage() {
     const [applications, setApplications] = useState<LifetimeApplication[]>([]);
@@ -15,7 +24,7 @@ export default function LifetimeMembershipPage() {
         const q = query(
             usersCollection,
             where('role', '==', 'member'),
-            where('lifetimeStatus', '==', 'applied')
+            where('lifetimeStatus', 'in', ['applied', 'approved'])
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -25,6 +34,9 @@ export default function LifetimeMembershipPage() {
                     uid: doc.id,
                     name: data.displayName || "N/A",
                     email: data.email || "N/A",
+                    lifetimeStatus: data.lifetimeStatus || 'not_applied',
+                    lifetimeExpiry: data.lifetimeExpiry,
+                    paymentTransactionId: data.paymentTransactionId,
                 };
             });
             setApplications(fetchedApplications);
@@ -45,9 +57,9 @@ export default function LifetimeMembershipPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Pending Requests</CardTitle>
+                    <CardTitle>Membership Requests</CardTitle>
                     <CardDescription>
-                        The table below lists all members who have applied for a lifetime upgrade.
+                        The table below lists all members who have applied for or have an active lifetime upgrade.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
