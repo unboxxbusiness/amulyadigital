@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {Megaphone, LifeBuoy, Mail, Shield, Handshake, Users, Crown, FileText, LayoutDashboard} from 'lucide-react';
+import {LifeBuoy, Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake} from 'lucide-react';
 
-import {cn} from '@/lib/utils';
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
 import {useEffect, useState} from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -19,6 +18,7 @@ const memberNavItems = [
 
 const adminNavItems = [
   {href: '/admin', label: 'Dashboard', icon: LayoutDashboard},
+  {href: '/admin/management', label: 'Admin Management', icon: UserPlus, adminOnly: true },
   {href: '/admin/applications', label: 'Membership Applications', icon: Users},
   {href: '/admin/lifetime', label: 'Lifetime Requests', icon: Crown},
   {href: '/admin/services', label: 'Service Requests', icon: FileText},
@@ -26,16 +26,25 @@ const adminNavItems = [
   {href: '/contact', label: 'Contact', icon: Mail},
 ];
 
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  adminOnly?: boolean;
+}
+
 export function MainNav() {
   const pathname = usePathname();
-  const [navItems, setNavItems] = useState<(typeof memberNavItems | typeof adminNavItems)>([]);
+  const [navItems, setNavItems] = useState<NavItem[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async user => {
       if (user) {
         try {
           const idTokenResult = await user.getIdTokenResult(true); // Force refresh
-          const role = idTokenResult.claims.role;
+          const role = idTokenResult.claims.role as string;
+          setUserRole(role);
           if (role === 'admin' || role === 'sub-admin') {
             setNavItems(adminNavItems);
           } else {
@@ -44,9 +53,11 @@ export function MainNav() {
         } catch (error) {
           console.error("Error getting user token:", error);
           setNavItems([]);
+          setUserRole(null);
         }
       } else {
         setNavItems([]);
+        setUserRole(null);
       }
     });
 
@@ -57,10 +68,17 @@ export function MainNav() {
     return null;
   }
 
+  const isNavItemVisible = (item: NavItem) => {
+    if (item.adminOnly) {
+      return userRole === 'admin';
+    }
+    return true;
+  }
+
   return (
     <div className="flex-1 overflow-y-auto">
       <SidebarMenu className="p-2">
-        {navItems.map(item => (
+        {navItems.filter(isNavItemVisible).map(item => (
           <SidebarMenuItem key={item.href}>
             <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={{children: item.label}}>
               <Link href={item.href}>

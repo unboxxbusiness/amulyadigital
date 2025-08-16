@@ -38,7 +38,7 @@ export async function createSubAdmin(formData: FormData) {
             createdAt: new Date().toISOString(),
         });
 
-        revalidatePath('/admin');
+        revalidatePath('/admin/management');
         return { success: true };
     } catch (error: any) {
         return { error: error.message };
