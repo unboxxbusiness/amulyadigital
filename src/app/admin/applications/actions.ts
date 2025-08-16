@@ -51,3 +51,46 @@ export async function rejectUser(uid: string) {
     await adminAuth.deleteUser(uid);
     revalidatePath('/admin/applications');
 }
+
+
+export async function approveUsers(uids: string[]) {
+    if (!uids || uids.length === 0) {
+        return { error: 'No users selected.' };
+    }
+    try {
+        // We approve users one by one to ensure the memberId transaction is safe.
+        for (const uid of uids) {
+            await approveUser(uid);
+        }
+        revalidatePath('/admin/applications');
+        return { success: true };
+    } catch (error) {
+        console.error("Error approving users in bulk:", error);
+        return { error: 'Failed to approve all selected users.' };
+    }
+}
+
+export async function rejectUsers(uids: string[]) {
+    if (!uids || uids.length === 0) {
+        return { error: 'No users selected.' };
+    }
+    try {
+        const batch = adminDb.batch();
+        for (const uid of uids) {
+            const userRef = adminDb.collection('users').doc(uid);
+            batch.delete(userRef);
+        }
+        await batch.commit();
+
+        // Deleting from Auth must be done one by one
+        for (const uid of uids) {
+            await adminAuth.deleteUser(uid);
+        }
+
+        revalidatePath('/admin/applications');
+        return { success: true };
+    } catch (error) {
+        console.error("Error rejecting users in bulk:", error);
+        return { error: 'Failed to reject all selected users.' };
+    }
+}

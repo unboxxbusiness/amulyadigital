@@ -2,38 +2,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { columns, Application } from "./columns";
 import { DataTable } from "@/components/data-table";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition, useCallback } from "react";
 import { adminDb } from "@/lib/firebase/client-app";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-
-async function getApplications() {
-    const usersCollection = collection(adminDb, 'users');
-    const q = query(usersCollection, where('role', '==', 'member'));
-    
-    return new Promise<Application[]>((resolve, reject) => {
-        onSnapshot(q, (snapshot) => {
-            if (snapshot.empty) {
-                resolve([]);
-                return;
-            }
-            const applications: Application[] = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    uid: doc.id,
-                    name: data.displayName || "N/A",
-                    email: data.email || "N/A",
-                    submitted: data.createdAt ? new Date(data.createdAt) : new Date(),
-                    status: data.status || "pending",
-                };
-            });
-            resolve(applications);
-        }, reject);
-    });
-}
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { approveUsers, rejectUsers } from "./actions";
 
 export default function MembershipApplicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedApplicationUids, setSelectedApplicationUids] = useState<string[]>([]);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   useEffect(() => {
     const usersCollection = collection(adminDb, 'users');
@@ -60,6 +41,46 @@ export default function MembershipApplicationsPage() {
     return () => unsubscribe();
   }, []);
 
+  const handleBulkAction = (action: 'approve' | 'reject') => {
+    startTransition(async () => {
+      const actionFn = action === 'approve' ? approveUsers : rejectUsers;
+      const result = await actionFn(selectedApplicationUids);
+      if (result.success) {
+        toast({ title: "Success", description: `Selected applications have been ${action}d.` });
+      } else {
+        toast({ variant: "destructive", title: "Error", description: result.error });
+      }
+    });
+  }
+
+  const onRowSelectionChange = useCallback((selectedRows: Record<string, boolean>) => {
+      const selectedUids = applications
+          .filter((_, index) => selectedRows[index])
+          .map(app => app.uid);
+      setSelectedApplicationUids(selectedUids);
+  }, [applications]);
+
+  const bulkActions = selectedApplicationUids.length > 0 ? (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => handleBulkAction('approve')}
+        disabled={isPending}
+      >
+        Approve ({selectedApplicationUids.length})
+      </Button>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => handleBulkAction('reject')}
+        disabled={isPending}
+      >
+        Reject ({selectedApplicationUids.length})
+      </Button>
+    </div>
+  ) : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -82,6 +103,8 @@ export default function MembershipApplicationsPage() {
                 data={applications}
                 filterColumnId="name"
                 filterPlaceholder="Filter by applicant name..."
+                onRowSelectionChange={onRowSelectionChange}
+                bulkActions={bulkActions}
               />
             )}
           </CardContent>
