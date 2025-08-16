@@ -24,21 +24,18 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const idToken = await userCredential.user.getIdToken();
-      const result = await signInWithIdToken(idToken);
-      if (result?.error) {
-        setError(result.error);
-        toast({
-          variant: 'destructive',
-          title: 'Sign In Failed',
-          description: result.error,
-        });
-      }
+      await signInWithIdToken(idToken);
     } catch (error: any) {
-      setError(error.message);
+      // Handle Next.js redirect error
+      if (error.digest?.startsWith('NEXT_REDIRECT')) {
+        return;
+      }
+      const errorMessage = error.message || 'An unexpected error occurred.';
+      setError(errorMessage);
       toast({
         variant: 'destructive',
         title: 'Sign In Failed',
-        description: error.message,
+        description: errorMessage,
       });
     }
   };

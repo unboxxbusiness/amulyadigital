@@ -18,13 +18,26 @@ export default function SignUpPage() {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
-    const result = await signUp(formData);
-    if (result?.error) {
-      setError(result.error);
+    try {
+      const result = await signUp(formData);
+      if (result?.error) {
+        setError(result.error);
+        toast({
+          variant: 'destructive',
+          title: 'Sign Up Failed',
+          description: result.error,
+        });
+      }
+    } catch (error: any) {
+      if (error.digest?.startsWith('NEXT_REDIRECT')) {
+        return;
+      }
+      const errorMessage = error.message || 'An unexpected error occurred.';
+      setError(errorMessage);
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: result.error,
+        description: errorMessage,
       });
     }
   };
