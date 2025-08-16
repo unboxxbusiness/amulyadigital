@@ -1,5 +1,6 @@
+
 import {initializeApp, getApps, getApp} from 'firebase/app';
-import {getAuth} from 'firebase/auth';
+import {getAuth, getIdToken} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -15,5 +16,18 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const adminDb = getFirestore(app);
+
+// Add an interceptor to add the auth token to fetch requests
+const originalFetch = global.fetch;
+global.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const currentUser = auth.currentUser;
+  if (currentUser && typeof input === 'object' && 'url' in input && input.url.startsWith('/api/')) {
+      const token = await getIdToken(currentUser);
+      const headers = new Headers(init?.headers);
+      headers.set('Authorization', `Bearer ${token}`);
+      init = { ...init, headers };
+  }
+  return originalFetch(input, init);
+};
 
 export {app, auth, adminDb};

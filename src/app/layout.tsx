@@ -8,7 +8,7 @@ import {SiteHeader} from '@/components/site-header';
 import {MainNav} from '@/components/main-nav';
 import {Toaster} from '@/components/ui/toaster';
 import {useEffect, useState} from 'react';
-import { onAuthStateChanged, User} from 'firebase/auth';
+import { onIdTokenChanged, User} from 'firebase/auth';
 import { auth } from '@/lib/firebase/client-app';
 import { ThemeProvider } from 'next-themes';
 
@@ -20,9 +20,21 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
 
   useEffect(() => {
     setMounted(true);
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+    const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      
+      try {
+        const request = new Request('/api/auth/session', {
+          method: 'GET',
+        });
+        const response = await fetch(request);
+        if (!response.ok) {
+           console.error('Failed to sync session');
+        }
+      } catch (error) {
+        console.error('Error syncing session:', error);
+      }
     });
     return () => unsubscribe();
   }, []);
