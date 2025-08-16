@@ -14,9 +14,10 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
   
-
   useEffect(() => {
+    setIsClient(true);
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
       setUser(currentUser);
       setLoading(false);
@@ -44,7 +45,7 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {showNav && user ? (
+        {isClient && showNav && user ? (
           <SidebarProvider>
             <Sidebar>
               <div className="flex flex-col h-full">
