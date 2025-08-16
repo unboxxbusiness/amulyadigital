@@ -63,6 +63,11 @@ export default function ServicesPage() {
         }
     ];
 
+    const getRequestStatusForService = (serviceName: string) => {
+        const request = requests.find(r => r.serviceName === serviceName);
+        return request ? request.status : null;
+    }
+
   return (
     <div className="space-y-6">
        <div>
@@ -71,22 +76,43 @@ export default function ServicesPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {services.map((service) => (
-             <Card key={service.title}>
+        {services.map((service) => {
+            const status = getRequestStatusForService(service.serviceName);
+            const hasApplied = status !== null;
+
+            return (
+             <Card key={service.title} className="flex flex-col">
                 <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
                     {service.icon}
-                    <CardTitle>{service.title}</CardTitle>
+                    <div className="flex-1">
+                       <CardTitle>{service.title}</CardTitle>
+                    </div>
+                     {hasApplied && (
+                       <Badge 
+                          variant={
+                              status === "pending" ? "secondary" : 
+                              status === "approved" ? "default" : "destructive"
+                          }
+                          className={status === "approved" ? "bg-accent text-accent-foreground" : ""}
+                        >
+                          {status}
+                        </Badge>
+                     )}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-1">
                     <p className="text-sm text-muted-foreground">{service.description}</p>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={() => handleApply(service.serviceName)} disabled={isPending}>
-                        {isPending ? "Applying..." : service.action}
+                    <Button 
+                        onClick={() => handleApply(service.serviceName)} 
+                        disabled={isPending || hasApplied}
+                        className="w-full"
+                    >
+                        {isPending ? "Applying..." : hasApplied ? "Applied" : service.action}
                     </Button>
                 </CardFooter>
             </Card>
-        ))}
+        )})}
       </div>
 
       <Card>
