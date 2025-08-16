@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X, Crown, UserPlus } from "lucide-react";
+import { Check, X, Crown, UserPlus, Users, BarChart, FileText } from "lucide-react";
 import { adminAuth, adminDb } from "@/lib/firebase/admin-app";
 import { revalidatePath } from "next/cache";
 import { approveLifetimeMembership } from "@/app/profile/actions";
@@ -69,6 +69,7 @@ export default async function AdminPage() {
   const lifetimeApplications = applications.filter(app => app.lifetimeStatus === 'applied');
   const serviceRequests = await getAllServiceRequests();
   const adminUsers = session?.role === 'admin' ? await getAdminUsers() : [];
+  const totalMembers = applications.filter(app => app.status === 'active').length;
 
   async function approveUser(formData: FormData) {
     'use server';
@@ -131,7 +132,148 @@ export default async function AdminPage() {
         <p className="text-muted-foreground">Manage membership applications and support requests.</p>
       </div>
       
-      {session?.role === 'admin' && (
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Members</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalMembers}</div>
+              <p className="text-xs text-muted-foreground">Currently active members</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Lifetime Upgrades</CardTitle>
+              <Crown className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{lifetimeApplications.length}</div>
+              <p className="text-xs text-muted-foreground">Pending lifetime membership requests</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Service Requests</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{serviceRequests.length}</div>
+              <p className="text-xs text-muted-foreground">Total service applications</p>
+            </CardContent>
+          </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Membership Applications</CardTitle>
+            <CardDescription>
+              Review and approve or reject new member applications.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Applicant</TableHead>
+                          <TableHead>Submitted</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {applications.map((app) => (
+                          <TableRow key={app.email}>
+                              <TableCell>
+                                  <div className="font-medium">{app.name}</div>
+                                  <div className="text-sm text-muted-foreground">{app.email}</div>
+                              </TableCell>
+                              <TableCell>{new Date(app.submitted).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                  <Badge variant={
+                                      app.status === "pending" ? "secondary" : 
+                                      app.status === "active" ? "default" : "destructive"
+                                  }
+                                  className={app.status === "active" ? "bg-accent text-accent-foreground" : ""}
+                                  >
+                                      {app.status}
+                                  </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                  {app.status === "pending" && (
+                                      <div className="flex gap-2 justify-end">
+                                          <form action={approveUser}>
+                                              <input type="hidden" name="uid" value={app.uid} />
+                                              <Button variant="outline" size="icon" type="submit">
+                                                  <Check className="h-4 w-4 text-accent" />
+                                                  <span className="sr-only">Approve</span>
+                                              </Button>
+                                          </form>
+                                          <form action={rejectUser}>
+                                              <input type="hidden" name="uid" value={app.uid} />
+                                              <Button variant="outline" size="icon" type="submit">
+                                                  <X className="h-4 w-4 text-destructive" />
+                                                  <span className="sr-only">Reject</span>
+                                              </Button>
+                                          </form>
+                                      </div>
+                                  )}
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+              <CardTitle>Lifetime Membership Requests</CardTitle>
+              <CardDescription>
+                  Review and approve applications for lifetime membership.
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Applicant</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {lifetimeApplications.length === 0 && (
+                          <TableRow>
+                              <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                  No pending applications.
+                              </TableCell>
+                          </TableRow>
+                      )}
+                      {lifetimeApplications.map((app) => (
+                          <TableRow key={app.uid}>
+                              <TableCell>{app.name}</TableCell>
+                              <TableCell>{app.email}</TableCell>
+                              <TableCell className="text-right">
+                                  <form action={approveLifetimeMembership}>
+                                      <input type="hidden" name="uid" value={app.uid} />
+                                      <Button variant="outline" size="sm" type="submit">
+                                          <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                                          Approve Lifetime
+                                      </Button>
+                                  </form>
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+       {session?.role === 'admin' && (
         <Card>
           <CardHeader>
             <CardTitle>Admin Management</CardTitle>
@@ -174,112 +316,6 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Membership Applications</CardTitle>
-          <CardDescription>
-            Review and approve or reject new member applications.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Applicant</TableHead>
-                        <TableHead>Submitted</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {applications.map((app) => (
-                        <TableRow key={app.email}>
-                            <TableCell>
-                                <div className="font-medium">{app.name}</div>
-                                <div className="text-sm text-muted-foreground">{app.email}</div>
-                            </TableCell>
-                            <TableCell>{new Date(app.submitted).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                                <Badge variant={
-                                    app.status === "pending" ? "secondary" : 
-                                    app.status === "active" ? "default" : "destructive"
-                                }
-                                className={app.status === "active" ? "bg-accent text-accent-foreground" : ""}
-                                >
-                                    {app.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                                {app.status === "pending" && (
-                                    <div className="flex gap-2 justify-end">
-                                        <form action={approveUser}>
-                                            <input type="hidden" name="uid" value={app.uid} />
-                                            <Button variant="outline" size="icon" type="submit">
-                                                <Check className="h-4 w-4 text-accent" />
-                                                <span className="sr-only">Approve</span>
-                                            </Button>
-                                        </form>
-                                        <form action={rejectUser}>
-                                             <input type="hidden" name="uid" value={app.uid} />
-                                            <Button variant="outline" size="icon" type="submit">
-                                                <X className="h-4 w-4 text-destructive" />
-                                                <span className="sr-only">Reject</span>
-                                            </Button>
-                                        </form>
-                                    </div>
-                                )}
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-            <CardTitle>Lifetime Membership Requests</CardTitle>
-            <CardDescription>
-                Review and approve applications for lifetime membership.
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Applicant</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                     {lifetimeApplications.length === 0 && (
-                        <TableRow>
-                            <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                No pending applications.
-                            </TableCell>
-                        </TableRow>
-                    )}
-                    {lifetimeApplications.map((app) => (
-                        <TableRow key={app.uid}>
-                            <TableCell>{app.name}</TableCell>
-                            <TableCell>{app.email}</TableCell>
-                            <TableCell className="text-right">
-                                <form action={approveLifetimeMembership}>
-                                    <input type="hidden" name="uid" value={app.uid} />
-                                    <Button variant="outline" size="sm" type="submit">
-                                        <Crown className="mr-2 h-4 w-4 text-yellow-500" />
-                                        Approve Lifetime
-                                    </Button>
-                                </form>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {Megaphone, LifeBuoy, Mail, Shield, Handshake} from 'lucide-react';
+import {Megaphone, LifeBuoy, Mail, Shield, Handshake, Users, Crown, FileText, LayoutDashboard} from 'lucide-react';
 
 import {cn} from '@/lib/utils';
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
@@ -10,26 +10,25 @@ import {useEffect, useState} from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client-app';
 
-
-const defaultNavItems = [
+const memberNavItems = [
+  {href: '/', label: 'Dashboard', icon: LayoutDashboard},
+  {href: '/services', label: 'Apply for Services', icon: Handshake},
   {href: '/support', label: 'AI Support', icon: LifeBuoy},
   {href: '/contact', label: 'Contact', icon: Mail},
 ];
 
-const memberNavItems = [
-  {href: '/', label: 'Dashboard', icon: Megaphone},
-  {href: '/services', label: 'Services', icon: Handshake},
-  ...defaultNavItems,
-];
-
 const adminNavItems = [
-  {href: '/admin', label: 'Admin', icon: Shield},
-  ...defaultNavItems,
+  {href: '/admin', label: 'Dashboard', icon: LayoutDashboard},
+  {href: '/admin/applications', label: 'Membership Applications', icon: Users},
+  {href: '/admin/lifetime', label: 'Lifetime Requests', icon: Crown},
+  {href: '/admin/services', label: 'Service Requests', icon: FileText},
+  {href: '/support', label: 'AI Support', icon: LifeBuoy},
+  {href: '/contact', label: 'Contact', icon: Mail},
 ];
 
 export function MainNav() {
   const pathname = usePathname();
-  const [navItems, setNavItems] = useState<typeof memberNavItems | typeof adminNavItems | []>([]);
+  const [navItems, setNavItems] = useState<(typeof memberNavItems | typeof adminNavItems)>([]);
   
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async user => {
