@@ -1,19 +1,4 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "serviceRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "memberId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    }
-  ],
+  "indexes": [],
   "fieldOverrides": []
 }
