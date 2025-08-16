@@ -12,6 +12,11 @@ export const columns: ColumnDef<LifetimeApplication>[] = [
     header: "Applicant Name",
   },
   {
+    accessorKey: "memberId",
+    header: "Member ID",
+    cell: ({ row }) => row.original.memberId || "N/A",
+  },
+  {
     accessorKey: "email",
     header: "Email",
   },

@@ -10,6 +10,7 @@ export type LifetimeApplication = {
     uid: string;
     name: string;
     email: string;
+    memberId?: string;
     lifetimeStatus: 'not_applied' | 'applied' | 'approved';
     lifetimeExpiry?: string;
     paymentTransactionId?: string;
@@ -34,6 +35,7 @@ export default function LifetimeMembershipPage() {
                     uid: doc.id,
                     name: data.displayName || "N/A",
                     email: data.email || "N/A",
+                    memberId: data.memberId,
                     lifetimeStatus: data.lifetimeStatus || 'not_applied',
                     lifetimeExpiry: data.lifetimeExpiry,
                     paymentTransactionId: data.paymentTransactionId,
