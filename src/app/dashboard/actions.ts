@@ -1,3 +1,4 @@
+
 'use server';
 
 import { verifySession } from "@/lib/auth/session";
@@ -37,16 +38,16 @@ export async function getDashboardData(): Promise<{ user: UserData | null, servi
         }
 
         const userData = userDoc.data() as UserData;
+        
+        const serviceRequestsSnapshot = await adminDb.collection('serviceRequests')
+            .where('uid', '==', session.uid)
+            .orderBy('createdAt', 'desc')
+            .get();
 
-        const memberId = userData.memberId;
-        let serviceRequests: ServiceRequest[] = [];
-        if (memberId) {
-             const snapshot = await adminDb.collection('serviceRequests').where('memberId', '==', memberId).orderBy('createdAt', 'desc').get();
-              if (!snapshot.empty) {
-                serviceRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRequest));
-            }
-        }
-       
+        const serviceRequests: ServiceRequest[] = serviceRequestsSnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            ...doc.data() 
+        } as ServiceRequest));
 
         return {
             user: {

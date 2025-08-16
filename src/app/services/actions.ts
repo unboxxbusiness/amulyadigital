@@ -1,3 +1,4 @@
+
 'use server';
 
 import { verifySession } from "@/lib/auth/session";
@@ -16,20 +17,15 @@ export async function applyForService(formData: FormData) {
   }
 
   try {
-    const userDoc = await adminDb.collection('users').doc(session.uid).get();
-    if (!userDoc.exists) {
-        return { error: "User not found." };
-    }
-    const memberId = userDoc.data()?.memberId;
-
     await adminDb.collection("serviceRequests").add({
-      memberId: memberId || session.uid,
+      uid: session.uid, // Add uid to the service request
       serviceName,
       status: "pending",
       createdAt: new Date().toISOString(),
     });
 
     revalidatePath('/services');
+    revalidatePath('/'); // Revalidate dashboard page
     return { success: true, message: "Application submitted successfully." };
   } catch (error: any) {
     return { error: "Failed to submit application." };
@@ -41,13 +37,12 @@ export async function getMemberServiceRequests() {
   if (!session?.uid) {
     return [];
   }
-   const userDoc = await adminDb.collection('users').doc(session.uid).get();
-    if (!userDoc.exists) {
-        return [];
-    }
-  const memberId = userDoc.data()?.memberId;
-
-  const snapshot = await adminDb.collection('serviceRequests').where('memberId', '==', memberId || session.uid).orderBy('createdAt', 'desc').get();
+  
+  const snapshot = await adminDb.collection('serviceRequests')
+    .where('uid', '==', session.uid)
+    .orderBy('createdAt', 'desc')
+    .get();
+    
   if (snapshot.empty) {
     return [];
   }
@@ -71,7 +66,7 @@ export async function getAllServiceRequests() {
 
 export async function updateServiceRequestStatus(formData: FormData) {
     const session = await verifySession();
-    if (session?.role !== 'admin') {
+    if (session?.role !== 'admin' && session?.role !== 'sub-admin') {
         return { error: "Unauthorized" };
     }
     const requestId = formData.get('requestId') as string;
@@ -83,8 +78,9 @@ export async function updateServiceRequestStatus(formData: FormData) {
 
     try {
         await adminDb.collection('serviceRequests').doc(requestId).update({ status });
-        revalidatePath('/admin');
+        revalidatePath('/admin/services');
         revalidatePath('/services');
+        revalidatePath('/');
         return { success: true };
     } catch (error) {
         return { error: "Failed to update status." };
