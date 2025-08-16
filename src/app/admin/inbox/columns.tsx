@@ -1,8 +1,9 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { format } from "date-fns"
+import { format, isAfter, isBefore, isEqual } from "date-fns"
 import { Checkbox } from "@/components/ui/checkbox"
 
 export type Message = {
@@ -70,6 +71,18 @@ export const columns: ColumnDef<Message>[] = [
      cell: ({ row }) => {
       const date = new Date(row.getValue("submittedAt"))
       return <div>{format(date, "PPP p")}</div>
-    }
+    },
+    filterFn: (row, columnId, filterValue: any) => {
+        const date = new Date(row.getValue(columnId));
+        const { from, to } = filterValue;
+        if (from && !to) {
+            return isEqual(date, from) || isAfter(date, from);
+        } else if (!from && to) {
+            return isEqual(date, to) || isBefore(date, to);
+        } else if (from && to) {
+            return (isEqual(date, from) || isAfter(date, from)) && (isEqual(date, to) || isBefore(date, to));
+        }
+        return true;
+    },
   },
 ]

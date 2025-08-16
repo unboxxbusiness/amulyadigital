@@ -1,3 +1,4 @@
+
 "use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { columns } from "./columns";
@@ -113,6 +114,7 @@ export default function MembershipApplicationsPage() {
                 data={applications}
                 filterColumnId="name"
                 filterPlaceholder="Filter by applicant name..."
+                dateFilterColumnId="submitted"
                 onRowSelectionChange={onRowSelectionChange}
                 bulkActions={bulkActions}
               />

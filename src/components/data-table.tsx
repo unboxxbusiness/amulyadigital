@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -12,7 +13,11 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
 } from "@tanstack/react-table"
+import type { DateRange } from "react-day-picker"
+import { subDays } from "date-fns"
 
 import {
   Table,
@@ -24,12 +29,14 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateRangePicker } from "./ui/date-range-picker"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   filterColumnId: string
   filterPlaceholder: string
+  dateFilterColumnId?: string;
   onRowSelectionChange?: (selectedRows: RowSelectionState) => void;
   bulkActions?: React.ReactNode;
 }
@@ -39,12 +46,14 @@ export function DataTable<TData, TValue>({
   data,
   filterColumnId,
   filterPlaceholder,
+  dateFilterColumnId,
   onRowSelectionChange,
   bulkActions,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = React.useState({})
+  const [date, setDate] = React.useState<DateRange | undefined>()
 
   const table = useReactTable({
     data,
@@ -56,21 +65,30 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
       sorting,
       columnFilters,
       rowSelection,
     },
   })
-  
+
   React.useEffect(() => {
     onRowSelectionChange?.(rowSelection);
   }, [rowSelection, onRowSelectionChange]);
 
+  React.useEffect(() => {
+    if (dateFilterColumnId) {
+      const dateFilter = { from: date?.from, to: date?.to }
+      table.getColumn(dateFilterColumnId)?.setFilterValue(dateFilter)
+    }
+  }, [date, table, dateFilterColumnId])
+
 
   return (
     <div>
-       <div className="flex items-center justify-between py-4">
+       <div className="flex items-center justify-between py-4 gap-2">
         <Input
           placeholder={filterPlaceholder}
           value={(table.getColumn(filterColumnId)?.getFilterValue() as string) ?? ""}
@@ -79,6 +97,9 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+        {dateFilterColumnId && (
+            <DateRangePicker date={date} onDateChange={setDate} />
+        )}
         {bulkActions}
       </div>
       <div className="rounded-md border">

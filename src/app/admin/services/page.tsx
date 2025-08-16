@@ -1,3 +1,4 @@
+
 "use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/data-table";
@@ -107,6 +108,7 @@ export default function ServiceRequestsPage() {
                             data={serviceRequests}
                             filterColumnId="memberId"
                             filterPlaceholder="Filter by Member ID..."
+                            dateFilterColumnId="createdAt"
                             onRowSelectionChange={onRowSelectionChange}
                             bulkActions={bulkActions}
                         />

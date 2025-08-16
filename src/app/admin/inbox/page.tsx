@@ -85,6 +85,7 @@ export default function InboxPage() {
                             data={messages} 
                             filterColumnId="name"
                             filterPlaceholder="Filter by name..."
+                            dateFilterColumnId="submittedAt"
                             onRowSelectionChange={onRowSelectionChange}
                             bulkActions={
                                 selectedMessageIds.length > 0 ? (
