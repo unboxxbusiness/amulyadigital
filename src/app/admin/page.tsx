@@ -1,23 +1,27 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Check, X } from "lucide-react";
-import { adminAuth } from "@/lib/firebase/admin-app";
+import { adminAuth, adminDb } from "@/lib/firebase/admin-app";
 import { revalidatePath } from "next/cache";
 
 async function getApplications() {
-    const { users } = await adminAuth.listUsers();
-    return users
-        .filter(user => user.customClaims?.role === 'member')
-        .map(user => ({
-            uid: user.uid,
-            name: user.displayName || "N/A",
-            email: user.email || "N/A",
-            submitted: user.metadata.creationTime,
-            status: user.customClaims?.status || "pending",
-        }));
+    const snapshot = await adminDb.collection('users').where('role', '==', 'member').get();
+    if (snapshot.empty) {
+        return [];
+    }
+    const applications = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            uid: doc.id,
+            name: data.displayName || "N/A",
+            email: data.email || "N/A",
+            submitted: data.createdAt ? new Date(data.createdAt) : new Date(),
+            status: data.status || "pending",
+        };
+    });
+    return applications;
 }
 
 export default async function AdminPage() {
@@ -27,12 +31,14 @@ export default async function AdminPage() {
     'use server';
     const uid = formData.get('uid') as string;
     await adminAuth.setCustomUserClaims(uid, { role: 'member', status: 'active' });
+    await adminDb.collection('users').doc(uid).update({ status: 'active' });
     revalidatePath('/admin');
   }
 
   async function rejectUser(formData: FormData) {
     'use server';
     const uid = formData.get('uid') as string;
+    await adminDb.collection('users').doc(uid).delete();
     await adminAuth.deleteUser(uid);
     revalidatePath('/admin');
   }

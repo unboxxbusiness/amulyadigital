@@ -1,9 +1,9 @@
 'use server';
-import {adminAuth} from '@/lib/firebase/admin-app';
+import {adminAuth, adminDb} from '@/lib/firebase/admin-app';
 import {createSession} from '@/lib/auth/session';
 import {deleteSession} from '@/lib/auth/session-edge';
 import {redirect} from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import {revalidatePath} from 'next/cache';
 
 export async function signUp(formData: FormData) {
   const email = formData.get('email') as string;
@@ -17,7 +17,7 @@ export async function signUp(formData: FormData) {
     if (isSuperAdmin && superAdmins.length > 0) {
       return {error: 'A super admin already exists.'};
     }
-    
+
     const userRecord = await adminAuth.createUser({
       email,
       password,
@@ -28,6 +28,18 @@ export async function signUp(formData: FormData) {
     const status = isSuperAdmin ? 'active' : 'pending';
 
     await adminAuth.setCustomUserClaims(userRecord.uid, {role, status});
+
+    // Create user document in Firestore
+    await adminDb.collection('users').doc(userRecord.uid).set({
+      uid: userRecord.uid,
+      email: userRecord.email,
+      displayName: userRecord.displayName || email.split('@')[0],
+      role: role,
+      status: status,
+      createdAt: new Date().toISOString(),
+      portfolioUrl: '',
+      bio: '',
+    });
 
     await createSession(userRecord.uid);
     revalidatePath('/');
