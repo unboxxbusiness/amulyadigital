@@ -8,8 +8,6 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { adminAuth } from "@/lib/firebase/admin-app";
-import { getSession } from "@/lib/auth/session";
 
 export default function ApplicationPage() {
   const [status, setStatus] = useState("pending");
@@ -17,13 +15,14 @@ export default function ApplicationPage() {
 
   useEffect(() => {
     const auth = getAuth();
-    onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const idTokenResult = await user.getIdTokenResult();
+            const idTokenResult = await user.getIdTokenResult(true); // Force refresh
             setStatus(idTokenResult.claims.status as string || 'pending');
             setSubmissionDate(new Date(user.metadata.creationTime!).toLocaleDateString());
         }
     });
+    return () => unsubscribe();
   }, []);
 
 

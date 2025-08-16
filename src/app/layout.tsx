@@ -12,16 +12,30 @@ import {getAuth, onAuthStateChanged, User} from 'firebase/auth';
 export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const auth = getAuth();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
       setUser(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [auth]);
 
   const showNav = !['/sign-in', '/sign-up'].includes(pathname);
+
+  if (loading) {
+     return (
+      <html lang="en" suppressHydrationWarning>
+        <body>
+          <div className="flex items-center justify-center min-h-screen">
+            Loading...
+          </div>
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -31,7 +45,7 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {showNav ? (
+        {showNav && user ? (
           <SidebarProvider>
             <Sidebar>
               <div className="flex flex-col h-full">

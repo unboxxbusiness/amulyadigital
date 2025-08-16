@@ -1,45 +1,61 @@
 import {NextResponse} from 'next/server';
 import type {NextRequest} from 'next/server';
-import {decrypt} from '@/lib/auth/session';
-import {adminAuth} from '@/lib/firebase/admin-app';
+import {jwtVerify} from 'jose';
 
-export const config = {
-  matcher: ['/admin/:path*', '/profile', '/application', '/', '/sign-in', '/sign-up'],
-};
+const secretKey = process.env.SESSION_SECRET || 'your-secret-key';
+const encodedKey = new TextEncoder().encode(secretKey);
+
+async function decrypt(session: string | undefined = '') {
+  try {
+    const {payload} = await jwtVerify(session, encodedKey, {
+      algorithms: ['HS256'],
+    });
+    return payload;
+  } catch (error) {
+    return null;
+  }
+}
 
 export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session')?.value;
-  const decryptedSession = await decrypt(sessionCookie);
-  const user = decryptedSession?.uid ? await adminAuth.getUser(decryptedSession.uid as string) : null;
-  const userRole = user?.customClaims?.role;
-  const userStatus = user?.customClaims?.status;
+  const session = await decrypt(sessionCookie);
 
   const {pathname} = request.nextUrl;
-
   const isAuthPage = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
+  const isAdminPage = pathname.startsWith('/admin');
+  const isApplicationPage = pathname.startsWith('/application');
+  const isMemberPage = !isAdminPage && !isApplicationPage && !isAuthPage;
 
   if (isAuthPage) {
-    if (user) {
-      return NextResponse.redirect(new URL(userRole === 'admin' ? '/admin' : '/', request.url));
+    if (session?.uid) {
+      return NextResponse.redirect(new URL('/', request.url));
     }
     return NextResponse.next();
   }
 
-  if (!user) {
-    return NextResponse.redirect(new URL('/sign-in', request.url));
+  if (!session?.uid) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/sign-in';
+    return NextResponse.redirect(url);
   }
 
-  if (userStatus !== 'active' && pathname !== '/application') {
-    return NextResponse.redirect(new URL('/application', request.url));
-  }
+  const {role, status} = session;
 
-  if (userRole === 'admin' && !pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/admin', request.url));
-  }
-
-  if (userRole !== 'admin' && pathname.startsWith('/admin')) {
+  if (isAdminPage && role !== 'admin') {
     return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  if (isApplicationPage && status === 'active') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  if (isMemberPage && role === 'member' && status !== 'active') {
+    return NextResponse.redirect(new URL('/application', request.url));
   }
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};

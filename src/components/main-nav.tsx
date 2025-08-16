@@ -28,23 +28,30 @@ const adminNavItems = [
 
 export function MainNav() {
   const pathname = usePathname();
-  const [navItems, setNavItems] = useState(defaultNavItems);
+  const [navItems, setNavItems] = useState<typeof memberNavItems | typeof adminNavItems | []>([]);
   const auth = getAuth();
 
   useEffect(() => {
-    onAuthStateChanged(auth, async user => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       if (user) {
-        const idTokenResult = await user.getIdTokenResult();
-        const role = idTokenResult.claims.role;
-        if (role === 'admin') {
-          setNavItems(adminNavItems);
-        } else {
-          setNavItems(memberNavItems);
+        try {
+          const idTokenResult = await user.getIdTokenResult(true); // Force refresh
+          const role = idTokenResult.claims.role;
+          if (role === 'admin') {
+            setNavItems(adminNavItems);
+          } else {
+            setNavItems(memberNavItems);
+          }
+        } catch (error) {
+          console.error("Error getting user token:", error);
+          setNavItems([]);
         }
       } else {
         setNavItems([]);
       }
     });
+
+    return () => unsubscribe();
   }, [auth]);
   
   if (navItems.length === 0) {
