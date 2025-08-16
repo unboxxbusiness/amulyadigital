@@ -5,9 +5,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Clock, FileText, User } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { logSiteVisit } from "./admin/actions";
 
 export default async function DashboardPage() {
   const { user, serviceRequests } = await getDashboardData();
+  
+  if (user) {
+    await logSiteVisit();
+  }
 
   if (!user) {
     return (
