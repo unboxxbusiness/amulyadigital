@@ -55,26 +55,21 @@ export async function signUp(formData: FormData) {
 export async function signInWithGoogle(user: UserCredential['user']) {
   try {
     const {uid, email, displayName, photoURL} = user;
-
-    // Check if user exists in Firestore
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
 
-    let role = 'member';
-    let status = 'pending';
+    let role: string;
+    let status: string;
 
     if (userDoc.exists) {
-      // User exists, get their role and status
       const existingData = userDoc.data();
       role = existingData?.role || 'member';
       status = existingData?.status || 'pending';
     } else {
-      // New user, create document in Firestore
       const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
       const superAdminUsers = await adminDb.collection('users').where('role', '==', 'admin').get();
 
       if (isSuperAdmin && !superAdminUsers.empty) {
-        // A super admin already exists, sign this user in as a regular member
         role = 'member';
         status = 'pending';
       } else {
@@ -82,7 +77,7 @@ export async function signInWithGoogle(user: UserCredential['user']) {
         status = isSuperAdmin ? 'active' : 'pending';
       }
 
-      await adminAuth.setCustomUserClaims(uid, {role, status});
+      await adminAuth.setCustomUserClaims(uid, { role, status });
       await userDocRef.set({
         uid,
         email,
@@ -96,9 +91,12 @@ export async function signInWithGoogle(user: UserCredential['user']) {
       });
     }
 
-    await createSession(uid);
+    await createSession(uid); // Ensure session is created/updated on every sign-in
     revalidatePath('/');
-    return {redirectPath: role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/'};
+    
+    const redirectPath = role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/';
+    return { redirectPath };
+
   } catch (error: any) {
     console.error('Error in signInWithGoogle:', error);
     return {error: 'An error occurred during Google Sign-In.'};
@@ -107,7 +105,6 @@ export async function signInWithGoogle(user: UserCredential['user']) {
 
 export async function createSessionAction(uid: string) {
   try {
-    // Always create a new session on sign-in to get fresh claims
     await createSession(uid); 
     
     const user = await adminAuth.getUser(uid);
