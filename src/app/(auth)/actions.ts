@@ -91,7 +91,7 @@ export async function signInWithGoogle(user: UserCredential['user']) {
       });
     }
 
-    await createSession(uid); // Ensure session is created/updated on every sign-in
+    await createSession(uid);
     revalidatePath('/');
     
     const redirectPath = role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/';
