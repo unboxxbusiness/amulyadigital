@@ -33,7 +33,7 @@ export function UserNav() {
     );
   }
 
-  const profileUrl = userRole === 'admin' || userRole === 'sub-admin' ? '/admin/settings' : '/profile';
+  const profileUrl = userRole === 'admin' || userRole === 'sub-admin' ? '/admin/settings' : '/settings';
 
   return (
     <DropdownMenu>

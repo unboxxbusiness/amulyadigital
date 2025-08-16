@@ -14,6 +14,7 @@ const memberNavItems = [
   {href: '/services', label: 'Apply for Services', icon: Handshake},
   {href: '/support', label: 'AI Support', icon: LifeBuoy},
   {href: '/contact', label: 'Contact', icon: Mail},
+  {href: '/settings', label: 'Settings', icon: Settings},
 ];
 
 const adminNavItems = [
@@ -79,7 +80,7 @@ export function MainNav() {
       <SidebarMenu className="p-2">
         {navItems.filter(isNavItemVisible).map(item => (
           <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton asChild isActive={pathname === item.href} tooltip={{children: item.label}}>
+            <SidebarMenuButton asChild isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')} tooltip={{children: item.label}}>
               <Link href={item.href}>
                 <item.icon />
                 <span>{item.label}</span>
