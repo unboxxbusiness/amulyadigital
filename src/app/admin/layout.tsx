@@ -8,6 +8,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await verifySession();
+  
   if (!session) {
     redirect("/sign-in");
   }

@@ -1,6 +1,7 @@
 'use server';
 import {adminAuth} from '@/lib/firebase/admin-app';
-import {createSession, deleteSession} from '@/lib/auth/session';
+import {createSession} from '@/lib/auth/session';
+import {deleteSession} from '@/lib/auth/session-edge';
 import {redirect} from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 

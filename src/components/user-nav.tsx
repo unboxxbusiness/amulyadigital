@@ -3,20 +3,20 @@ import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Button} from '@/components/ui/button';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {useEffect, useState} from 'react';
-import {getAuth, onAuthStateChanged, User} from 'firebase/auth';
+import { onAuthStateChanged, User} from 'firebase/auth';
 import {signOut} from '@/app/(auth)/actions';
 import Link from 'next/link';
+import { auth } from '@/lib/firebase/client-app';
 
 export function UserNav() {
   const [user, setUser] = useState<User | null>(null);
-  const auth = getAuth();
-
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
       setUser(currentUser);
     });
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
 
   if (!user) {
     return (

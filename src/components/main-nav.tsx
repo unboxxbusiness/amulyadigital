@@ -7,7 +7,9 @@ import {Megaphone, User, FileText, LifeBuoy, Mail, Shield} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
 import {useEffect, useState} from 'react';
-import {getAuth, onAuthStateChanged} from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '@/lib/firebase/client-app';
+
 
 const defaultNavItems = [
   {href: '/support', label: 'AI Support', icon: LifeBuoy},
@@ -29,8 +31,7 @@ const adminNavItems = [
 export function MainNav() {
   const pathname = usePathname();
   const [navItems, setNavItems] = useState<typeof memberNavItems | typeof adminNavItems | []>([]);
-  const auth = getAuth();
-
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async user => {
       if (user) {
@@ -52,7 +53,7 @@ export function MainNav() {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
   
   if (navItems.length === 0) {
     return null;

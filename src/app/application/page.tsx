@@ -7,14 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase/client-app";
 
 export default function ApplicationPage() {
   const [status, setStatus] = useState("pending");
   const [submissionDate, setSubmissionDate] = useState<string | null>(null);
 
   useEffect(() => {
-    const auth = getAuth();
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
             const idTokenResult = await user.getIdTokenResult(true); // Force refresh

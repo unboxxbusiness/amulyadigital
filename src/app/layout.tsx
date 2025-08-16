@@ -7,13 +7,14 @@ import {SiteHeader} from '@/components/site-header';
 import {MainNav} from '@/components/main-nav';
 import {Toaster} from '@/components/ui/toaster';
 import {useEffect, useState} from 'react';
-import {getAuth, onAuthStateChanged, User} from 'firebase/auth';
+import { onAuthStateChanged, User} from 'firebase/auth';
+import { auth } from '@/lib/firebase/client-app';
 
 export default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const auth = getAuth();
+  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
@@ -21,17 +22,15 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth]);
+  }, []);
 
   const showNav = !['/sign-in', '/sign-up'].includes(pathname);
 
-  if (loading) {
-     return (
+  if (loading && showNav) {
+    return (
       <html lang="en" suppressHydrationWarning>
         <body>
-          <div className="flex items-center justify-center min-h-screen">
-            Loading...
-          </div>
+          <div className="flex items-center justify-center min-h-screen">Loading...</div>
         </body>
       </html>
     );
