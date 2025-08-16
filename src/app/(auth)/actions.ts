@@ -107,10 +107,13 @@ export async function signInWithGoogle(user: UserCredential['user']) {
 
 export async function createSessionAction(uid: string) {
   try {
-    await createSession(uid);
+    // Always create a new session on sign-in to get fresh claims
+    await createSession(uid); 
+    
     const user = await adminAuth.getUser(uid);
     const role = user.customClaims?.role;
     const status = user.customClaims?.status;
+    
     revalidatePath('/');
     const redirectPath = (role === 'admin' || role === 'sub-admin') ? '/admin' : status === 'pending' ? '/application' : '/';
     return {redirectPath};
