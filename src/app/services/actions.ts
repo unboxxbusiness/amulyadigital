@@ -86,3 +86,53 @@ export async function updateServiceRequestStatus(formData: FormData) {
         return { error: "Failed to update status." };
     }
 }
+
+export async function updateServiceRequestsStatus(requestIds: string[], status: 'approved' | 'rejected') {
+    const session = await verifySession();
+    if (session?.role !== 'admin' && session?.role !== 'sub-admin') {
+        return { error: "Unauthorized" };
+    }
+    if (!requestIds || requestIds.length === 0) {
+        return { error: 'No requests selected.' };
+    }
+
+    try {
+        const batch = adminDb.batch();
+        requestIds.forEach(id => {
+            const docRef = adminDb.collection('serviceRequests').doc(id);
+            batch.update(docRef, { status });
+        });
+        await batch.commit();
+        revalidatePath('/admin/services');
+        revalidatePath('/services');
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating requests:", error);
+        return { error: 'Failed to update requests.' };
+    }
+}
+
+export async function deleteServiceRequests(requestIds: string[]) {
+    const session = await verifySession();
+    if (session?.role !== 'admin' && session?.role !== 'sub-admin') {
+        return { error: "Unauthorized" };
+    }
+    if (!requestIds || requestIds.length === 0) {
+        return { error: 'No requests selected.' };
+    }
+
+    try {
+        const batch = adminDb.batch();
+        requestIds.forEach(id => {
+            const docRef = adminDb.collection('serviceRequests').doc(id);
+            batch.delete(docRef);
+        });
+        await batch.commit();
+        revalidatePath('/admin/services');
+        return { success: true };
+    } catch (error) {
+        console.error("Error deleting requests:", error);
+        return { error: 'Failed to delete requests.' };
+    }
+}
