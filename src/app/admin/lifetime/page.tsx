@@ -1,38 +1,41 @@
-import { Button } from "@/components/ui/button";
+"use client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Crown } from "lucide-react";
-import { adminDb } from "@/lib/firebase/admin-app";
-import { approveLifetimeMembership } from "@/app/profile/actions";
+import { DataTable } from "@/components/data-table";
+import { columns, LifetimeApplication } from "./columns";
+import { useEffect, useState } from "react";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase/client-app";
 
-type LifetimeApplication = {
-    uid: string;
-    name: string;
-    email: string;
-}
+export default function LifetimeMembershipPage() {
+    const [applications, setApplications] = useState<LifetimeApplication[]>([]);
+    const [loading, setLoading] = useState(true);
 
-async function getLifetimeApplications() {
-    const snapshot = await adminDb.collection('users')
-        .where('role', '==', 'member')
-        .where('lifetimeStatus', '==', 'applied')
-        .get();
+     useEffect(() => {
+        const usersCollection = collection(adminDb, 'users');
+        const q = query(
+            usersCollection,
+            where('role', '==', 'member'),
+            where('lifetimeStatus', '==', 'applied')
+        );
 
-    if (snapshot.empty) {
-        return [];
-    }
-    const applications: LifetimeApplication[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            uid: doc.id,
-            name: data.displayName || "N/A",
-            email: data.email || "N/A",
-        };
-    });
-    return applications;
-}
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedApplications: LifetimeApplication[] = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    uid: doc.id,
+                    name: data.displayName || "N/A",
+                    email: data.email || "N/A",
+                };
+            });
+            setApplications(fetchedApplications);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching lifetime applications:", error);
+            setLoading(false);
+        });
 
-export default async function LifetimeMembershipPage() {
-    const lifetimeApplications = await getLifetimeApplications();
+        return () => unsubscribe();
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -48,39 +51,16 @@ export default async function LifetimeMembershipPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Applicant</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {lifetimeApplications.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                        No pending applications.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                            {lifetimeApplications.map((app) => (
-                                <TableRow key={app.uid}>
-                                    <TableCell>{app.name}</TableCell>
-                                    <TableCell>{app.email}</TableCell>
-                                    <TableCell className="text-right">
-                                        <form action={approveLifetimeMembership}>
-                                            <input type="hidden" name="uid" value={app.uid} />
-                                            <Button variant="outline" size="sm" type="submit">
-                                                <Crown className="mr-2 h-4 w-4 text-yellow-500" />
-                                                Approve Lifetime
-                                            </Button>
-                                        </form>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    {loading ? (
+                        <p>Loading applications...</p>
+                    ) : (
+                        <DataTable 
+                            columns={columns} 
+                            data={applications} 
+                            filterColumnId="name"
+                            filterPlaceholder="Filter by name..."
+                        />
+                    )}
                 </CardContent>
             </Card>
         </div>

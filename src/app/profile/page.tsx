@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase/client-app';
+import { auth, adminDb as db } from '@/lib/firebase/client-app';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { useState, useEffect, useCallback } from 'react';

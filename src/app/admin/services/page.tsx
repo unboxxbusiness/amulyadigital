@@ -1,12 +1,30 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+"use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Check, X } from "lucide-react";
-import { getAllServiceRequests, updateServiceRequestStatus } from "@/app/services/actions";
+import { DataTable } from "@/components/data-table";
+import { ServiceRequest, columns } from "./columns";
+import { useEffect, useState } from "react";
+import { adminDb } from "@/lib/firebase/client-app";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 
-export default async function ServiceRequestsPage() {
-    const serviceRequests = await getAllServiceRequests();
+export default function ServiceRequestsPage() {
+    const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const requestsCollection = collection(adminDb, 'serviceRequests');
+        const q = query(requestsCollection, orderBy('createdAt', 'desc'));
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const requests: ServiceRequest[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRequest));
+            setServiceRequests(requests);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching service requests:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -16,71 +34,22 @@ export default async function ServiceRequestsPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Pending Requests</CardTitle>
+                    <CardTitle>All Requests</CardTitle>
                     <CardDescription>
-                        The table below lists all member service requests awaiting approval.
+                        The table below lists all member service requests.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Member ID</TableHead>
-                                <TableHead>Service</TableHead>
-                                <TableHead>Submitted</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {serviceRequests.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground">
-                                        No pending service requests.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                            {serviceRequests.map((req) => (
-                                <TableRow key={req.id}>
-                                    <TableCell>{req.memberId}</TableCell>
-                                    <TableCell>{req.serviceName}</TableCell>
-                                    <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={
-                                            req.status === "pending" ? "secondary" : 
-                                            req.status === "approved" ? "default" : "destructive"
-                                        }
-                                        className={req.status === "approved" ? "bg-accent text-accent-foreground" : ""}
-                                        >
-                                            {req.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        {req.status === "pending" && (
-                                            <div className="flex gap-2 justify-end">
-                                                <form action={updateServiceRequestStatus}>
-                                                    <input type="hidden" name="requestId" value={req.id} />
-                                                    <input type="hidden" name="status" value="approved" />
-                                                    <Button variant="outline" size="icon" type="submit">
-                                                        <Check className="h-4 w-4 text-accent" />
-                                                        <span className="sr-only">Approve</span>
-                                                    </Button>
-                                                </form>
-                                                <form action={updateServiceRequestStatus}>
-                                                    <input type="hidden" name="requestId" value={req.id} />
-                                                    <input type="hidden" name="status" value="rejected" />
-                                                    <Button variant="outline" size="icon" type="submit">
-                                                        <X className="h-4 w-4 text-destructive" />
-                                                        <span className="sr-only">Reject</span>
-                                                    </Button>
-                                                </form>
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    {loading ? (
+                        <p>Loading service requests...</p>
+                    ) : (
+                        <DataTable 
+                            columns={columns} 
+                            data={serviceRequests}
+                            filterColumnId="memberId"
+                            filterPlaceholder="Filter by Member ID..."
+                        />
+                    )}
                 </CardContent>
             </Card>
         </div>
