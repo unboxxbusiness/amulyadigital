@@ -1,17 +1,43 @@
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Check, X } from "lucide-react";
+import { adminAuth } from "@/lib/firebase/admin-app";
+import { revalidatePath } from "next/cache";
 
-const applications = [
-    { name: "Elena Rodriguez", email: "elena.r@example.com", submitted: "2024-07-28", status: "Pending" },
-    { name: "Ben Carter", email: "ben.carter@example.com", submitted: "2024-07-27", status: "Pending" },
-    { name: "Aisha Khan", email: "aisha.k@example.com", submitted: "2024-07-25", status: "Approved" },
-    { name: "Marcus Chen", email: "marcus.chen@example.com", submitted: "2024-07-24", status: "Rejected" },
-];
+async function getApplications() {
+    const { users } = await adminAuth.listUsers();
+    return users
+        .filter(user => user.customClaims?.role === 'member')
+        .map(user => ({
+            uid: user.uid,
+            name: user.displayName || "N/A",
+            email: user.email || "N/A",
+            submitted: user.metadata.creationTime,
+            status: user.customClaims?.status || "pending",
+        }));
+}
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const applications = await getApplications();
+
+  async function approveUser(formData: FormData) {
+    'use server';
+    const uid = formData.get('uid') as string;
+    await adminAuth.setCustomUserClaims(uid, { role: 'member', status: 'active' });
+    revalidatePath('/admin');
+  }
+
+  async function rejectUser(formData: FormData) {
+    'use server';
+    const uid = formData.get('uid') as string;
+    await adminAuth.deleteUser(uid);
+    revalidatePath('/admin');
+  }
+
+
   return (
     <div className="space-y-6">
        <div>
@@ -43,28 +69,34 @@ export default function AdminPage() {
                                 <div className="font-medium">{app.name}</div>
                                 <div className="text-sm text-muted-foreground">{app.email}</div>
                             </TableCell>
-                            <TableCell>{app.submitted}</TableCell>
+                            <TableCell>{new Date(app.submitted).toLocaleDateString()}</TableCell>
                             <TableCell>
                                 <Badge variant={
-                                    app.status === "Pending" ? "secondary" : 
-                                    app.status === "Approved" ? "default" : "destructive"
+                                    app.status === "pending" ? "secondary" : 
+                                    app.status === "active" ? "default" : "destructive"
                                 }
-                                className={app.status === "Approved" ? "bg-accent text-accent-foreground" : ""}
+                                className={app.status === "active" ? "bg-accent text-accent-foreground" : ""}
                                 >
                                     {app.status}
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-right">
-                                {app.status === "Pending" && (
+                                {app.status === "pending" && (
                                     <div className="flex gap-2 justify-end">
-                                        <Button variant="outline" size="icon">
-                                            <Check className="h-4 w-4 text-accent" />
-                                            <span className="sr-only">Approve</span>
-                                        </Button>
-                                        <Button variant="outline" size="icon">
-                                            <X className="h-4 w-4 text-destructive" />
-                                            <span className="sr-only">Reject</span>
-                                        </Button>
+                                        <form action={approveUser}>
+                                            <input type="hidden" name="uid" value={app.uid} />
+                                            <Button variant="outline" size="icon" type="submit">
+                                                <Check className="h-4 w-4 text-accent" />
+                                                <span className="sr-only">Approve</span>
+                                            </Button>
+                                        </form>
+                                        <form action={rejectUser}>
+                                             <input type="hidden" name="uid" value={app.uid} />
+                                            <Button variant="outline" size="icon" type="submit">
+                                                <X className="h-4 w-4 text-destructive" />
+                                                <span className="sr-only">Reject</span>
+                                            </Button>
+                                        </form>
                                     </div>
                                 )}
                             </TableCell>
