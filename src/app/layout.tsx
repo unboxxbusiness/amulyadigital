@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseAuthListener } from "@/components/firebase-auth-listener";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import { verifySession } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
   title: "Amulya Digital",
@@ -20,6 +21,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await verifySession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -45,25 +48,29 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseAuthListener />
-          <SidebarProvider>
-            <Sidebar collapsible="icon">
-              <div className="flex flex-col h-full">
-                <div className="p-4">
-                  <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-                    <Leaf className="size-6 text-accent" />
-                    <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
-                      Amulya Digital
-                    </span>
+          {session ? (
+              <SidebarProvider>
+                <Sidebar collapsible="icon">
+                  <div className="flex flex-col h-full">
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+                        <Leaf className="size-6 text-accent" />
+                        <span className="font-bold text-lg group-data-[collapsible=icon]:hidden">
+                          Amulya Digital
+                        </span>
+                      </div>
+                    </div>
+                    <MainNav />
                   </div>
-                </div>
-                <MainNav />
-              </div>
-            </Sidebar>
-            <SidebarInset>
-              <SiteHeader />
-              <main className="p-4 lg:p-6">{children}</main>
-            </SidebarInset>
-          </SidebarProvider>
+                </Sidebar>
+                <SidebarInset>
+                  <SiteHeader />
+                  <main className="p-4 lg:p-6">{children}</main>
+                </SidebarInset>
+              </SidebarProvider>
+          ) : (
+            <>{children}</>
+          )}
           <Toaster />
         </ThemeProvider>
       </body>
