@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -21,10 +22,6 @@ const AnswerCommonQuestionOutputSchema = z.object({
 });
 export type AnswerCommonQuestionOutput = z.infer<typeof AnswerCommonQuestionOutputSchema>;
 
-export async function answerCommonQuestion(input: AnswerCommonQuestionInput): Promise<AnswerCommonQuestionOutput> {
-  return answerCommonQuestionFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'answerCommonQuestionPrompt',
   input: {schema: AnswerCommonQuestionInputSchema},
@@ -37,14 +34,8 @@ const prompt = ai.definePrompt({
   Question: {{{question}}} `,
 });
 
-const answerCommonQuestionFlow = ai.defineFlow(
-  {
-    name: 'answerCommonQuestionFlow',
-    inputSchema: AnswerCommonQuestionInputSchema,
-    outputSchema: AnswerCommonQuestionOutputSchema,
-  },
-  async input => {
+
+export async function answerCommonQuestion(input: AnswerCommonQuestionInput): Promise<AnswerCommonQuestionOutput> {
     const {output} = await prompt(input);
     return output!;
-  }
-);
+}
