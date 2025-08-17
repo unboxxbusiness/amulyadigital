@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -59,10 +60,11 @@ export function ServicesClientPage({ initialRequests }: { initialRequests: Servi
                                     <SelectValue placeholder="Select a service..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Mentorship Program">Mentorship Program</SelectItem>
-                                    <SelectItem value="Career Counseling">Career Counseling</SelectItem>
-                                    <SelectItem value="Resume Review">Resume Review</SelectItem>
-                                    <SelectItem value="Networking Events">Networking Events</SelectItem>
+                                    <SelectItem value="Financial Services">Financial Services</SelectItem>
+                                    <SelectItem value="Discounted Courses">Discounted Courses</SelectItem>
+                                    <SelectItem value="Software Development Bootcamp">Software Development Bootcamp</SelectItem>
+                                    <SelectItem value="Digital Marketing Workshop">Digital Marketing Workshop</SelectItem>
+                                    <SelectItem value="Education Counseling">Education Counseling</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
