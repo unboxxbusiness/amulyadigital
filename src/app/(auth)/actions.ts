@@ -90,32 +90,24 @@ export async function signInWithGoogle(user: UserCredential['user']) {
         bio: '',
       });
     }
+    
+    // The session is now created/updated by the onIdTokenChanged listener in layout.tsx
+    // which calls the /api/auth/session endpoint. This ensures the session is always
+    // in sync with the user's latest claims.
 
-    await createSession(uid);
     revalidatePath('/');
     
-    const redirectPath = role === 'admin' ? '/admin' : status === 'pending' ? '/application' : '/';
-    return { redirectPath };
+    const userRecord = await adminAuth.getUser(uid);
+    const latestClaims = userRecord.customClaims || {};
+    const latestRole = latestClaims.role || role;
+    const latestStatus = latestClaims.status || status;
+
+    const redirectPath = latestRole === 'admin' ? '/admin' : latestStatus === 'pending' ? '/application' : '/';
+    return { redirectPath, role: latestRole, status: latestStatus };
 
   } catch (error: any) {
     console.error('Error in signInWithGoogle:', error);
     return {error: 'An error occurred during Google Sign-In.'};
-  }
-}
-
-export async function createSessionAction(uid: string) {
-  try {
-    await createSession(uid); 
-    
-    const user = await adminAuth.getUser(uid);
-    const role = user.customClaims?.role;
-    const status = user.customClaims?.status;
-    
-    revalidatePath('/');
-    const redirectPath = (role === 'admin' || role === 'sub-admin') ? '/admin' : status === 'pending' ? '/application' : '/';
-    return {redirectPath};
-  } catch (error: any) {
-    return {error: error.message};
   }
 }
 

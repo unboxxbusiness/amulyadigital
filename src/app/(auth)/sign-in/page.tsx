@@ -1,3 +1,4 @@
+
 'use client';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
@@ -7,7 +8,7 @@ import Link from 'next/link';
 import {useState} from 'react';
 import {signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
 import {auth} from '@/lib/firebase/client-app';
-import {createSessionAction, signInWithGoogle} from '../actions';
+import {signInWithGoogle} from '../actions';
 import {useToast} from '@/hooks/use-toast';
 import {useRouter} from 'next/navigation';
 
@@ -58,17 +59,17 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const {user} = userCredential;
+      const idTokenResult = await user.getIdTokenResult(true);
+      const claims = idTokenResult.claims;
+      
+      const role = claims.role || 'member';
+      const status = claims.status || 'pending';
 
-      const result = await createSessionAction(user.uid);
-
-      if (result.error) {
-        toast({variant: 'destructive', title: 'Sign In Failed', description: result.error});
-        setIsLoading(false);
-        return;
-      }
+      const redirectPath = (role === 'admin' || role === 'sub-admin') ? '/admin' : status === 'pending' ? '/application' : '/';
 
       toast({title: 'Sign In Successful', description: "Welcome back! You're being redirected..."});
-      router.push(result.redirectPath!);
+      router.push(redirectPath);
+
     } catch (error: any) {
       if (error.code && error.code.startsWith('auth/')) {
         const friendlyMessage = handleFirebaseAuthErrors(error.code);
