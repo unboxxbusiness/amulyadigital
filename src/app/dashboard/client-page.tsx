@@ -5,18 +5,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Clock, FileText, User } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { logSiteVisit } from "@/app/admin/actions";
 import { format } from 'date-fns';
-import { useEffect } from "react";
 import type { getDashboardData } from "./actions";
 
 type DashboardData = Awaited<ReturnType<typeof getDashboardData>>;
 
 export function DashboardClientPage({ user, serviceRequests }: DashboardData) {
-  useEffect(() => {
-    // Log site visit only on the client side
-    logSiteVisit();
-  }, []);
 
   if (!user) {
     return null; // Or a loading state, though the parent page should redirect
