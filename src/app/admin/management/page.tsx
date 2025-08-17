@@ -1,3 +1,4 @@
+
 "use client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DataTable } from "@/components/data-table";
 import { AdminUser, columns } from "./columns";
 import { useEffect, useState } from "react";
-import { adminDb } from "@/lib/firebase/client-app";
+import { db } from "@/lib/firebase/client-app";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 
 export default function AdminManagementPage() {
@@ -18,7 +19,7 @@ export default function AdminManagementPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const usersCollection = collection(adminDb, 'users');
+        const usersCollection = collection(db, 'users');
         const q = query(usersCollection, where('role', 'in', ['admin', 'sub-admin']));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {

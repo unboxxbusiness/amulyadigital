@@ -5,7 +5,7 @@ import { DataTable } from "@/components/data-table";
 import { columns } from "./columns";
 import { useEffect, useState } from "react";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { adminDb } from "@/lib/firebase/client-app";
+import { db } from "@/lib/firebase/client-app";
 
 export type LifetimeApplication = {
     uid: string;
@@ -23,7 +23,7 @@ export default function LifetimeMembershipPage() {
     const [loading, setLoading] = useState(true);
 
      useEffect(() => {
-        const usersCollection = collection(adminDb, 'users');
+        const usersCollection = collection(db, 'users');
         const q = query(
             usersCollection,
             where('role', '==', 'member'),

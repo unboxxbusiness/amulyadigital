@@ -15,7 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
-const adminDb = getFirestore(app);
+const db = getFirestore(app);
 
 // Add an interceptor to add the auth token to fetch requests
 const originalFetch = global.fetch;
@@ -30,4 +30,4 @@ global.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Res
   return originalFetch(input, init);
 };
 
-export {app, auth, adminDb};
+export {app, auth, db};

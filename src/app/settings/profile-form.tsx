@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useCallback } from "react";
 import { onAuthStateChanged, User, updateProfile } from "firebase/auth";
-import { auth, adminDb as db } from "@/lib/firebase/client-app";
+import { auth, db } from "@/lib/firebase/client-app";
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export function ProfileForm() {

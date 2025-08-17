@@ -5,7 +5,7 @@ import { DataTable } from "@/components/data-table";
 import { columns, Message } from "./columns";
 import { useEffect, useState, useTransition, useCallback } from "react";
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
-import { adminDb } from "@/lib/firebase/client-app";
+import { db } from "@/lib/firebase/client-app";
 import { Button } from "@/components/ui/button";
 import { deleteMessages } from "./actions";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ export default function InboxPage() {
     const { toast } = useToast();
 
     useEffect(() => {
-        const messagesCollection = collection(adminDb, 'contactSubmissions');
+        const messagesCollection = collection(db, 'contactSubmissions');
         const q = query(messagesCollection, orderBy('submittedAt', 'desc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {

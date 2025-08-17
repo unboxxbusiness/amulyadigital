@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { columns } from "./columns";
 import { DataTable } from "@/components/data-table";
 import { useEffect, useState, useTransition, useCallback } from "react";
-import { adminDb } from "@/lib/firebase/client-app";
+import { db } from "@/lib/firebase/client-app";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +27,7 @@ export default function MembershipApplicationsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const usersCollection = collection(adminDb, 'users');
+    const usersCollection = collection(db, 'users');
     const q = query(usersCollection, where('role', '==', 'member'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
