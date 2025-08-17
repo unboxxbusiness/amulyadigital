@@ -43,13 +43,16 @@ export async function signUp(formData: FormData) {
 
     await createSession(userRecord.uid);
     revalidatePath('/');
-    redirect(isSuperAdmin ? '/admin' : '/application');
+    
   } catch (error: any) {
     if (error.digest?.startsWith('NEXT_REDIRECT')) {
       throw error;
     }
     return {error: error.message};
   }
+
+  const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
+  redirect(isSuperAdmin ? '/admin' : '/application');
 }
 
 export async function signInWithGoogle(user: UserCredential['user']) {
@@ -90,7 +93,6 @@ export async function signInWithGoogle(user: UserCredential['user']) {
       }, { merge: true });
     }
     
-    // Always ensure claims are set/updated in Auth
     const userRecord = await adminAuth.getUser(uid);
     const currentClaims = userRecord.customClaims || {};
     const newClaims = {
@@ -99,13 +101,10 @@ export async function signInWithGoogle(user: UserCredential['user']) {
     };
     await adminAuth.setCustomUserClaims(uid, newClaims);
 
-    // Create the server-side session cookie
     await createSession(uid);
     
-    // Revalidate paths that might depend on user data
     revalidatePath('/');
     
-    // Return the user's latest info for client-side redirection
     const redirectPath = newClaims.role === 'admin' ? '/admin' : newClaims.status === 'pending' ? '/application' : '/';
     return { redirectPath };
 
