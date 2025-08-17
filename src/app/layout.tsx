@@ -1,3 +1,4 @@
+
 import type { Metadata } from "next";
 import { Leaf } from "lucide-react";
 import "./globals.css";
@@ -46,9 +47,9 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseAuthListener />
           {session ? (
             <SidebarProvider>
+               <FirebaseAuthListener />
               <Sidebar collapsible="icon">
                 <div className="flex flex-col h-full">
                   <div className="p-4">
