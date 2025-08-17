@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { offerChatAction } from './actions';
+import { offerChat } from './actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -48,9 +48,9 @@ export default function SupportPage() {
       chatHistory.push({ role: 'user', content: input });
 
 
-      const result = await offerChatAction({ history: chatHistory.map(h => ({role: h.role, content: h.content})) });
+      const result = await offerChat({ history: chatHistory.map(h => ({role: h.role, content: h.content})) });
 
-      if (result.error) {
+      if ('error' in result) {
         throw new Error(result.error);
       }
       
