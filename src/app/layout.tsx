@@ -6,7 +6,7 @@ import { Sidebar, SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { SiteHeader } from "@/components/site-header";
 import { MainNav } from "@/components/main-nav";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/theme-provider";
 import { verifySession } from "@/lib/auth/session";
 import { FirebaseAuthListener } from "@/components/firebase-auth-listener";
 import { GoogleAnalytics } from "@/components/google-analytics";
