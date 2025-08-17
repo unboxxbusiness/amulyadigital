@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,8 @@ export default function AdminOffersPage() {
                             data={offers}
                             filterColumnId="title"
                             filterPlaceholder="Filter by title..."
+                            exportable={true}
+                            exportFileName="offers.csv"
                         />
                     )}
                 </CardContent>

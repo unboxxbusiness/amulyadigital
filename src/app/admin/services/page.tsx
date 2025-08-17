@@ -112,6 +112,8 @@ export default function ServiceRequestsPage() {
                             dateFilterColumnId="createdAt"
                             onRowSelectionChange={onRowSelectionChange}
                             bulkActions={bulkActions}
+                            exportable={true}
+                            exportFileName="service_requests.csv"
                         />
                     )}
                 </CardContent>

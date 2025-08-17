@@ -17,7 +17,7 @@ import {
   getFacetedUniqueValues,
 } from "@tanstack/react-table"
 import type { DateRange } from "react-day-picker"
-import { subDays } from "date-fns"
+import { Download } from "lucide-react"
 
 import {
   Table,
@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DateRangePicker } from "./ui/date-range-picker"
+import { downloadToCSV } from "@/lib/export"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -39,6 +40,8 @@ interface DataTableProps<TData, TValue> {
   dateFilterColumnId?: string;
   onRowSelectionChange?: (selectedRows: RowSelectionState) => void;
   bulkActions?: React.ReactNode;
+  exportable?: boolean;
+  exportFileName?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -49,6 +52,8 @@ export function DataTable<TData, TValue>({
   dateFilterColumnId,
   onRowSelectionChange,
   bulkActions,
+  exportable = false,
+  exportFileName = "data.csv"
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -85,22 +90,37 @@ export function DataTable<TData, TValue>({
     }
   }, [date, table, dateFilterColumnId])
 
+  const handleExport = () => {
+    const rows = table.getFilteredRowModel().rows.map(row => row.original);
+    downloadToCSV(rows, exportFileName);
+  }
+
 
   return (
     <div>
-       <div className="flex items-center justify-between py-4 gap-2">
-        <Input
-          placeholder={filterPlaceholder}
-          value={(table.getColumn(filterColumnId)?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn(filterColumnId)?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
-        {dateFilterColumnId && (
-            <DateRangePicker date={date} onDateChange={setDate} />
-        )}
-        {bulkActions}
+       <div className="flex items-center justify-between py-4 gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+           <Input
+            placeholder={filterPlaceholder}
+            value={(table.getColumn(filterColumnId)?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn(filterColumnId)?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm"
+          />
+          {dateFilterColumnId && (
+              <DateRangePicker date={date} onDateChange={setDate} />
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {bulkActions}
+          {exportable && (
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          )}
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>

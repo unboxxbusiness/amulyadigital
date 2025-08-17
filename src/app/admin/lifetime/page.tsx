@@ -77,6 +77,8 @@ export default function LifetimeMembershipPage() {
                             filterColumnId="name"
                             filterPlaceholder="Filter by name..."
                             dateFilterColumnId="lifetimeStartDate"
+                            exportable={true}
+                            exportFileName="lifetime_requests.csv"
                         />
                     )}
                 </CardContent>

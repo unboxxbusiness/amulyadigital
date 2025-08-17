@@ -108,6 +108,8 @@ export default function AdminManagementPage() {
                             data={adminUsers}
                             filterColumnId="email"
                             filterPlaceholder="Filter by email..."
+                            exportable={true}
+                            exportFileName="admin_users.csv"
                         />
                     )}
                 </CardContent>

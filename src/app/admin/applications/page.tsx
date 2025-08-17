@@ -117,6 +117,8 @@ export default function MembershipApplicationsPage() {
                 dateFilterColumnId="submitted"
                 onRowSelectionChange={onRowSelectionChange}
                 bulkActions={bulkActions}
+                exportable={true}
+                exportFileName="membership_applications.csv"
               />
             )}
           </CardContent>
