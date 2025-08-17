@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { verifySession } from "@/lib/auth/session";
 import { FirebaseAuthListener } from "@/components/firebase-auth-listener";
+import { GoogleAnalytics } from "@/components/google-analytics";
 
 export const metadata: Metadata = {
   title: "Amulya Digital",
@@ -36,6 +37,9 @@ export default async function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

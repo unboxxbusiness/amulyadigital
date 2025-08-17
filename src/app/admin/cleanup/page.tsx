@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useTransition } from "react";
-import { deleteOldContactMessages, deleteOldPendingMembers, deleteOldSiteVisits } from "./actions";
+import { deleteOldContactMessages, deleteOldPendingMembers } from "./actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 
@@ -26,11 +26,6 @@ export default function CleanupPage() {
   };
 
   const cleanupOptions = [
-    {
-      title: "Delete Old Site Visits",
-      description: "This will permanently delete all site visit logs that are older than 30 days. This action cannot be undone.",
-      action: () => handleCleanup(deleteOldSiteVisits, "Old site visits have been deleted."),
-    },
     {
       title: "Delete Old Contact Messages",
       description: "This will permanently delete all contact form submissions that are older than 30 days. This action cannot be undone.",

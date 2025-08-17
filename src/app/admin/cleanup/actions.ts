@@ -31,18 +31,6 @@ async function deleteCollection(query: FirebaseFirestore.Query) {
 }
 
 
-export async function deleteOldSiteVisits() {
-    try {
-        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-        const query = adminDb.collection('siteVisits').where('timestamp', '<=', thirtyDaysAgo);
-        const count = await deleteCollection(query);
-        return { success: true, message: `Successfully deleted ${count} old site visit logs.` };
-    } catch (error: any) {
-        console.error("Error deleting old site visits:", error);
-        return { error: error.message || "Failed to delete old site visits." };
-    }
-}
-
 export async function deleteOldContactMessages() {
     try {
         const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
