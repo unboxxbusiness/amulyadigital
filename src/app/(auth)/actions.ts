@@ -51,9 +51,6 @@ export async function signUp(formData: FormData) {
     }
     return {error: error.message};
   }
-
-  const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
-  redirect(isSuperAdmin ? '/admin' : '/application');
 }
 
 export async function signInWithGoogle(user: UserCredential['user']) {
@@ -118,9 +115,6 @@ export async function signInWithGoogle(user: UserCredential['user']) {
 
     await createSession(uid, claims);
     revalidatePath('/');
-
-    const redirectPath = claims.role === 'admin' ? '/admin' : claims.status === 'pending' ? '/application' : '/';
-    return { redirectPath };
 
   } catch (error: any) {
     console.error('Error in signInWithGoogle:', error);

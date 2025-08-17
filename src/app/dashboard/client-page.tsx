@@ -41,7 +41,7 @@ export function DashboardClientPage({ user, serviceRequests }: DashboardData) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                 <Badge className="text-lg bg-accent text-accent-foreground">{user.status === 'active' ? 'Batch Member' : 'Pending'}</Badge>
+                 <Badge className="text-lg bg-accent text-accent-foreground">{user.status === 'active' ? 'Active Member' : 'Pending'}</Badge>
               </div>
                <p className="text-xs text-muted-foreground mt-1">
                 {user.lifetimeStatus === 'approved' && user.lifetimeExpiry

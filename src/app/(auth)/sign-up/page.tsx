@@ -59,8 +59,10 @@ export default function SignUpPage() {
       } else {
         toast({
           title: 'Sign Up Successful',
-          description: "You're being redirected to your application page.",
+          description: "You're being redirected...",
         });
+        router.push('/');
+        router.refresh();
       }
     } catch (error: any) {
       if (error.digest?.startsWith('NEXT_REDIRECT')) {
@@ -84,7 +86,7 @@ export default function SignUpPage() {
       const userCredential = await signInWithPopup(auth, provider);
       const result = await signInWithGoogle(userCredential.user);
 
-      if (result.error) {
+      if (result?.error) {
         toast({variant: 'destructive', title: 'Google Sign In Failed', description: result.error});
         return;
       }
@@ -92,7 +94,8 @@ export default function SignUpPage() {
       await userCredential.user.getIdToken(true);
 
       toast({title: 'Sign Up Successful', description: "Welcome! You're being redirected..."});
-      router.push(result.redirectPath!);
+      router.push('/');
+      router.refresh();
 
     } catch (error: any) {
       let message = 'Could not complete sign up with Google. Please try again.';

@@ -62,16 +62,11 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const {user} = userCredential;
-      const idTokenResult = await user.getIdTokenResult(true); 
-      const claims = idTokenResult.claims;
+      await user.getIdToken(true); 
       
-      const role = claims.role || 'member';
-      const status = claims.status || 'pending';
-
-      const redirectPath = (role === 'admin' || role === 'sub-admin') ? '/admin' : status === 'pending' ? '/application' : '/';
-
       toast({title: 'Sign In Successful', description: "Welcome back! You're being redirected..."});
-      router.push(redirectPath);
+      router.push('/');
+      router.refresh();
 
     } catch (error: any) {
       const friendlyMessage = handleFirebaseAuthErrors(error.code);
@@ -89,7 +84,7 @@ export default function SignInPage() {
       
       const result = await signInWithGoogle(userCredential.user);
 
-      if (result.error) {
+      if (result?.error) {
         toast({variant: 'destructive', title: 'Google Sign In Failed', description: result.error});
         setIsGoogleLoading(false);
         return;
@@ -98,7 +93,8 @@ export default function SignInPage() {
       await userCredential.user.getIdToken(true);
       
       toast({title: 'Sign In Successful', description: "Welcome! You're being redirected..."});
-      router.push(result.redirectPath!);
+      router.push('/');
+      router.refresh();
 
     } catch (error: any) {
       const friendlyMessage = handleFirebaseAuthErrors(error.code);

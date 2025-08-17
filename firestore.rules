@@ -3,61 +3,65 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is an admin or sub-admin
+    // Helper function to check if a user is an admin or sub-admin
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'sub-admin'];
-    }
-    
-    // Helper function to check if the user is a super-admin
-    function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth.token.role == 'admin' || request.auth.token.role == 'sub-admin';
     }
 
-    // Helper function to check if the user is a member
-    function isMember() {
-        return request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    // Helper function to check if a user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Helper function to check if a user is an active member
+    function isActiveMember() {
+      return request.auth.token.status == 'active';
     }
 
     // Users Collection
     match /users/{userId} {
-      // Admins can read/write any user document
-      // Users can only read/write their own document
-      allow read, write: if isAdmin() || request.auth.uid == userId;
-      // Allow creation for anyone (for sign-up)
-      allow create: if request.auth.uid != null;
+      // Admins can create any user (for sub-admins)
+      allow create: if isAdmin();
+      // Users can read their own data, admins can read any user's data
+      allow get: if isOwner(userId) || isAdmin();
+      // Users can update their own data, admins can update any user's data
+      allow update: if isOwner(userId) || isAdmin();
+      // Only full admins can delete users
+      allow delete: if request.auth.token.role == 'admin';
     }
 
     // Service Requests Collection
     match /serviceRequests/{requestId} {
-      // Admins can read/write any request
-      allow read, write: if isAdmin();
-      // Members can create their own requests
-      allow create: if isMember() && request.resource.data.uid == request.auth.uid;
-      // Members can read their own requests
-      allow read: if isMember() && resource.data.uid == request.auth.uid;
-    }
-
-    // Contact Submissions Collection
-    match /contactSubmissions/{submissionId} {
-      // Admins can read/write any submission
-      allow read, write: if isAdmin();
-      // Authenticated users can create submissions for themselves
-      allow create: if request.auth.uid != null && request.resource.data.uid == request.auth.uid;
+      // Active members can create their own service requests
+      allow create: if isActiveMember() && request.resource.data.uid == request.auth.uid;
+      // Users can read their own requests, admins can read all requests
+      allow list, get: if isOwner(request.resource.data.uid) || isAdmin();
+      // Admins can update any service request
+      allow update: if isAdmin();
+      // Admins can delete any service request
+      allow delete: if isAdmin();
     }
     
-    // Counters Collection (for member IDs)
+    // Contact Submissions Collection
+    match /contactSubmissions/{submissionId} {
+        // Any authenticated user can create a contact submission
+        allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+        // Admins can read, update, and delete contact submissions
+        allow read, update, delete: if isAdmin();
+    }
+
+    // Counters Collection (for Member IDs)
     match /counters/{counterId} {
-      // Only super admins can read/write counters
-      allow read, write: if isSuperAdmin();
+      // Only admins can read or write to counters
+      allow read, write: if isAdmin();
     }
     
     // Site Visits Collection
     match /siteVisits/{visitId} {
-        // Only admins can read visit logs
-        allow read: if isAdmin();
-        // Any authenticated user can create a site visit log (happens on dashboard load)
-        allow create: if request.auth.uid != null;
+      // Any authenticated user can create a site visit log
+      allow create: if request.auth != null;
+      // Only admins can read or delete site visit logs
+      allow read, delete: if isAdmin();
     }
-
   }
 }
