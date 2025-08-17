@@ -1,22 +1,23 @@
 'use server';
 
 import 'server-only';
-import { adminAuth } from '@/lib/firebase/admin-app';
 import { cookies } from 'next/headers';
 import { encrypt, decrypt } from './session-edge';
+import { adminAuth } from '@/lib/firebase/admin-app';
 
-export async function createSession(uid: string) {
-  const user = await adminAuth.getUser(uid);
-  const role = user.customClaims?.role || 'member';
-  const status = user.customClaims?.status || 'pending';
-  const memberId = user.customClaims?.memberId || null;
+type Claims = {
+  role: string;
+  status: string;
+  memberId: string | null;
+};
 
+export async function createSession(uid: string, claims: Claims) {
   const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const sessionPayload = {
     uid,
-    role,
-    status,
-    memberId,
+    role: claims.role,
+    status: claims.status,
+    memberId: claims.memberId,
     expires: expires.toISOString(),
   };
 
@@ -38,4 +39,18 @@ export async function verifySession() {
     return null;
   }
   return session;
+}
+
+export async function refreshSession() {
+  const session = await verifySession();
+  if (!session) return;
+  
+  const user = await adminAuth.getUser(session.uid);
+  const claims = {
+    role: user.customClaims?.role || 'member',
+    status: user.customClaims?.status || 'pending',
+    memberId: user.customClaims?.memberId || null,
+  };
+  
+  await createSession(user.uid, claims);
 }

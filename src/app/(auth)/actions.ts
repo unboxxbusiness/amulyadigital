@@ -27,8 +27,9 @@ export async function signUp(formData: FormData) {
 
     const role = isSuperAdmin ? 'admin' : 'member';
     const status = isSuperAdmin ? 'active' : 'pending';
+    const claims = {role, status, memberId: null};
 
-    await adminAuth.setCustomUserClaims(userRecord.uid, {role, status});
+    await adminAuth.setCustomUserClaims(userRecord.uid, claims);
 
     await adminDb.collection('users').doc(userRecord.uid).set({
       uid: userRecord.uid,
@@ -41,7 +42,7 @@ export async function signUp(formData: FormData) {
       bio: '',
     });
 
-    await createSession(userRecord.uid);
+    await createSession(userRecord.uid, claims);
     revalidatePath('/');
     
   } catch (error: any) {
@@ -61,51 +62,51 @@ export async function signInWithGoogle(user: UserCredential['user']) {
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
 
-    let role: string;
-    let status: string;
+    let claims: { role: string; status: string; memberId: string | null };
 
     if (userDoc.exists) {
-      const existingData = userDoc.data();
-      role = existingData?.role || 'member';
-      status = existingData?.status || 'pending';
+        const existingData = userDoc.data();
+        claims = {
+            role: existingData?.role || 'member',
+            status: existingData?.status || 'pending',
+            memberId: existingData?.memberId || null
+        };
     } else {
-      const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
-      const superAdminUsers = await adminDb.collection('users').where('role', '==', 'admin').get();
+        const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
+        const superAdminUsers = await adminDb.collection('users').where('role', '==', 'admin').get();
 
-      if (isSuperAdmin && !superAdminUsers.empty) {
-        role = 'member';
-        status = 'pending';
-      } else {
-        role = isSuperAdmin ? 'admin' : 'member';
-        status = isSuperAdmin ? 'active' : 'pending';
-      }
+        let role: string;
+        let status: string;
 
-      await userDocRef.set({
-        uid,
-        email,
-        displayName: displayName || email?.split('@')[0],
-        photoURL: photoURL || '',
-        role,
-        status,
-        createdAt: new Date().toISOString(),
-        portfolioUrl: '',
-        bio: '',
-      }, { merge: true });
+        if (isSuperAdmin && !superAdminUsers.empty) {
+            role = 'member';
+            status = 'pending';
+        } else {
+            role = isSuperAdmin ? 'admin' : 'member';
+            status = isSuperAdmin ? 'active' : 'pending';
+        }
+
+        claims = { role, status, memberId: null };
+
+        await userDocRef.set({
+            uid,
+            email,
+            displayName: displayName || email?.split('@')[0],
+            photoURL: photoURL || '',
+            role: claims.role,
+            status: claims.status,
+            createdAt: new Date().toISOString(),
+            portfolioUrl: '',
+            bio: '',
+        }, { merge: true });
+
+        await adminAuth.setCustomUserClaims(uid, { role: claims.role, status: claims.status });
     }
-    
-    const userRecord = await adminAuth.getUser(uid);
-    const currentClaims = userRecord.customClaims || {};
-    const newClaims = {
-        role: currentClaims.role || role,
-        status: currentClaims.status || status,
-    };
-    await adminAuth.setCustomUserClaims(uid, newClaims);
 
-    await createSession(uid);
-    
+    await createSession(uid, claims);
     revalidatePath('/');
-    
-    const redirectPath = newClaims.role === 'admin' ? '/admin' : newClaims.status === 'pending' ? '/application' : '/';
+
+    const redirectPath = claims.role === 'admin' ? '/admin' : claims.status === 'pending' ? '/application' : '/';
     return { redirectPath };
 
   } catch (error: any) {
