@@ -77,7 +77,6 @@ export async function signInWithGoogle(user: UserCredential['user']) {
         status = isSuperAdmin ? 'active' : 'pending';
       }
 
-      await adminAuth.setCustomUserClaims(uid, { role, status });
       await userDocRef.set({
         uid,
         email,
@@ -88,22 +87,27 @@ export async function signInWithGoogle(user: UserCredential['user']) {
         createdAt: new Date().toISOString(),
         portfolioUrl: '',
         bio: '',
-      });
+      }, { merge: true });
     }
     
-    // The session is now created/updated by the onIdTokenChanged listener in layout.tsx
-    // which calls the /api/auth/session endpoint. This ensures the session is always
-    // in sync with the user's latest claims.
+    // Always ensure claims are set/updated in Auth
+    const userRecord = await adminAuth.getUser(uid);
+    const currentClaims = userRecord.customClaims || {};
+    const newClaims = {
+        role: currentClaims.role || role,
+        status: currentClaims.status || status,
+    };
+    await adminAuth.setCustomUserClaims(uid, newClaims);
 
+    // Create the server-side session cookie
+    await createSession(uid);
+    
+    // Revalidate paths that might depend on user data
     revalidatePath('/');
     
-    const userRecord = await adminAuth.getUser(uid);
-    const latestClaims = userRecord.customClaims || {};
-    const latestRole = latestClaims.role || role;
-    const latestStatus = latestClaims.status || status;
-
-    const redirectPath = latestRole === 'admin' ? '/admin' : latestStatus === 'pending' ? '/application' : '/';
-    return { redirectPath, role: latestRole, status: latestStatus };
+    // Return the user's latest info for client-side redirection
+    const redirectPath = newClaims.role === 'admin' ? '/admin' : newClaims.status === 'pending' ? '/application' : '/';
+    return { redirectPath };
 
   } catch (error: any) {
     console.error('Error in signInWithGoogle:', error);

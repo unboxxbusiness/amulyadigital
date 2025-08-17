@@ -1,10 +1,11 @@
+
 'use client';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import Link from 'next/link';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {signUp, signInWithGoogle} from '../actions';
 import {useToast} from '@/hooks/use-toast';
 import {GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
@@ -41,19 +42,6 @@ export default function SignUpPage() {
 
   const isSuperAdminEmail = email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
 
-  const handleFirebaseAuthErrors = (errorCode: string) => {
-    switch (errorCode) {
-      case 'auth/email-already-in-use':
-        return 'This email is already registered. Please sign in.';
-      case 'auth/weak-password':
-        return 'The password is too weak. Please use at least 6 characters.';
-      case 'auth/invalid-email':
-        return 'Please enter a valid email address.';
-      default:
-        return 'An unexpected error occurred. Please try again later.';
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -75,10 +63,7 @@ export default function SignUpPage() {
         });
       }
     } catch (error: any) {
-      if (error.digest?.startsWith('NEXT_REDIRECT')) {
-        // This is not an actual error, but Next.js's way of redirecting.
-        // We don't need to show a toast or do anything.
-      } else {
+      if (!error.digest?.startsWith('NEXT_REDIRECT')) {
         toast({
           variant: 'destructive',
           title: 'Sign Up Failed',
@@ -99,18 +84,23 @@ export default function SignUpPage() {
 
       if (result.error) {
         toast({variant: 'destructive', title: 'Google Sign In Failed', description: result.error});
-        setIsGoogleLoading(false);
         return;
       }
+      
+      // Force a token refresh on the client to ensure claims are up-to-date before redirect
+      await userCredential.user.getIdToken(true);
+
       toast({title: 'Sign Up Successful', description: "Welcome! You're being redirected..."});
       router.push(result.redirectPath!);
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Google Sign In Failed',
         description: 'Could not complete sign up with Google. Please try again.',
       });
-      setIsGoogleLoading(false);
+    } finally {
+        setIsGoogleLoading(false);
     }
   };
 

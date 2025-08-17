@@ -59,7 +59,8 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const {user} = userCredential;
-      const idTokenResult = await user.getIdTokenResult(true);
+      // Force refresh of the token to get latest claims
+      const idTokenResult = await user.getIdTokenResult(true); 
       const claims = idTokenResult.claims;
       
       const role = claims.role || 'member';
@@ -77,7 +78,8 @@ export default function SignInPage() {
       } else {
         toast({variant: 'destructive', title: 'Sign In Failed', description: 'An unexpected error occurred.'});
       }
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -86,6 +88,8 @@ export default function SignInPage() {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
+      
+      // Call the server action to handle user creation/update and session creation
       const result = await signInWithGoogle(userCredential.user);
 
       if (result.error) {
@@ -93,15 +97,21 @@ export default function SignInPage() {
         setIsGoogleLoading(false);
         return;
       }
+      
+      // Force a token refresh on the client to ensure claims are up-to-date before redirect
+      await userCredential.user.getIdToken(true);
+      
       toast({title: 'Sign In Successful', description: "Welcome! You're being redirected..."});
       router.push(result.redirectPath!);
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Google Sign In Failed',
         description: 'Could not complete sign in with Google. Please try again.',
       });
-      setIsGoogleLoading(false);
+    } finally {
+        setIsGoogleLoading(false);
     }
   };
 
