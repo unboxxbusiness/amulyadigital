@@ -14,7 +14,17 @@ export async function GET(request: NextRequest) {
 
   try {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    await createSession(decodedToken.uid);
+    
+    // Extract claims correctly from the decoded token
+    const claims = {
+      role: decodedToken.role || 'member',
+      status: decodedToken.status || 'pending',
+      memberId: decodedToken.memberId || null,
+    };
+    
+    // Pass the extracted claims to createSession
+    await createSession(decodedToken.uid, claims);
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error verifying token or creating session:', error);
