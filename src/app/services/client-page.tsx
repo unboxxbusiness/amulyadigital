@@ -60,11 +60,9 @@ export function ServicesClientPage({ initialRequests }: { initialRequests: Servi
                                     <SelectValue placeholder="Select a service..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Financial Services">Financial Services</SelectItem>
-                                    <SelectItem value="Discounted Courses">Discounted Courses</SelectItem>
-                                    <SelectItem value="Software Development Bootcamp">Software Development Bootcamp</SelectItem>
-                                    <SelectItem value="Digital Marketing Workshop">Digital Marketing Workshop</SelectItem>
-                                    <SelectItem value="Education Counseling">Education Counseling</SelectItem>
+                                    <SelectItem value="Education Support">Education Support</SelectItem>
+                                    <SelectItem value="Money Support">Money Support</SelectItem>
+                                    <SelectItem value="Software for Startup">Software for Startup</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
