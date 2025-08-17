@@ -28,17 +28,17 @@ export default function CleanupPage() {
   const cleanupOptions = [
     {
       title: "Delete Old Site Visits",
-      description: "This will permanently delete all site visit logs that are older than 90 days. This action cannot be undone.",
+      description: "This will permanently delete all site visit logs that are older than 30 days. This action cannot be undone.",
       action: () => handleCleanup(deleteOldSiteVisits, "Old site visits have been deleted."),
     },
     {
       title: "Delete Old Contact Messages",
-      description: "This will permanently delete all contact form submissions that are older than 90 days. This action cannot be undone.",
+      description: "This will permanently delete all contact form submissions that are older than 30 days. This action cannot be undone.",
       action: () => handleCleanup(deleteOldContactMessages, "Old contact messages have been deleted."),
     },
     {
       title: "Delete Old Pending Members",
-      description: "This will permanently delete user accounts with a 'pending' status that were created more than 90 days ago. This action cannot be undone.",
+      description: "This will permanently delete user accounts with a 'pending' status that were created more than 30 days ago. This action cannot be undone.",
       action: () => handleCleanup(deleteOldPendingMembers, "Old pending member applications have been deleted."),
     },
   ];

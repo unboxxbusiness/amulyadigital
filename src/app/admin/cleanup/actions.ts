@@ -33,8 +33,8 @@ async function deleteCollection(query: FirebaseFirestore.Query) {
 
 export async function deleteOldSiteVisits() {
     try {
-        const ninetyDaysAgo = subDays(new Date(), 90).toISOString();
-        const query = adminDb.collection('siteVisits').where('timestamp', '<=', ninetyDaysAgo);
+        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+        const query = adminDb.collection('siteVisits').where('timestamp', '<=', thirtyDaysAgo);
         const count = await deleteCollection(query);
         return { success: true, message: `Successfully deleted ${count} old site visit logs.` };
     } catch (error: any) {
@@ -45,8 +45,8 @@ export async function deleteOldSiteVisits() {
 
 export async function deleteOldContactMessages() {
     try {
-        const ninetyDaysAgo = subDays(new Date(), 90).toISOString();
-        const query = adminDb.collection('contactSubmissions').where('submittedAt', '<=', ninetyDaysAgo);
+        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+        const query = adminDb.collection('contactSubmissions').where('submittedAt', '<=', thirtyDaysAgo);
         const count = await deleteCollection(query);
         revalidatePath('/admin/inbox');
         return { success: true, message: `Successfully deleted ${count} old contact messages.` };
@@ -64,10 +64,10 @@ export async function deleteOldPendingMembers() {
     }
 
     try {
-        const ninetyDaysAgo = subDays(new Date(), 90).toISOString();
+        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
         const query = adminDb.collection('users')
             .where('status', '==', 'pending')
-            .where('createdAt', '<=', ninetyDaysAgo);
+            .where('createdAt', '<=', thirtyDaysAgo);
         
         const snapshot = await query.get();
         if (snapshot.empty) {
