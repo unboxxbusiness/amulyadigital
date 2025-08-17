@@ -12,7 +12,9 @@ export default async function ApplicationLayout({
     redirect("/sign-in");
   }
 
-  if (session.status === "active") {
+  // This page is only for pending members.
+  // Active members and admins will be redirected by the root page router.
+  if (session.status !== "pending") {
       redirect("/");
   }
 

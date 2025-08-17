@@ -22,7 +22,9 @@ export default function ApplicationPage() {
             try {
                 const idTokenResult = await user.getIdTokenResult(true); // Force refresh
                 setStatus(idTokenResult.claims.status as string || 'pending');
-                setSubmissionDate(new Date(user.metadata.creationTime!).toLocaleDateString());
+                if(user.metadata.creationTime){
+                  setSubmissionDate(new Date(user.metadata.creationTime).toLocaleDateString());
+                }
             } catch (error: any) {
                 if (error.code === 'auth/user-token-expired') {
                     await signOut();

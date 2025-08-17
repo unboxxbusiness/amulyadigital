@@ -1,21 +1,25 @@
 import { verifySession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
-import { getDashboardData } from "./dashboard/actions";
-import { DashboardClientPage } from "./dashboard/client-page";
 
-export default async function MemberDashboardPage() {
-  const { user, serviceRequests } = await getDashboardData();
-  
-  if (!user) {
-    // This should be handled by the layout, but as a fallback
+export default async function RootPageRouter() {
+  const session = await verifySession();
+
+  if (!session) {
     redirect("/sign-in");
   }
 
-  // This page is only for active members.
-  // Admins and pending users are redirected by the root page router.
-  if (user.status !== 'active') {
-    redirect('/application');
+  if (session.role === "admin" || session.role === "sub-admin") {
+    redirect("/admin");
   }
 
-  return <DashboardClientPage user={user} serviceRequests={serviceRequests} />;
+  if (session.status === "pending") {
+    redirect("/application");
+  }
+  
+  if (session.status === "active") {
+    redirect("/dashboard");
+  }
+
+  // Fallback for any other case
+  redirect("/sign-in");
 }

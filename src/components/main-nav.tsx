@@ -9,9 +9,10 @@ import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/s
 import {useEffect, useState} from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client-app';
+import { signOut } from '@/app/(auth)/actions';
 
 const memberNavItems = [
-  {href: '/', label: 'Dashboard', icon: LayoutDashboard},
+  {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
   {href: '/services', label: 'Apply for Services', icon: Handshake},
   {href: '/support', label: 'AI Support', icon: LifeBuoy},
   {href: '/contact', label: 'Contact', icon: Mail},
@@ -53,8 +54,10 @@ export function MainNav() {
           } else {
             setNavItems(memberNavItems);
           }
-        } catch (error) {
-          console.error("Error getting user token:", error);
+        } catch (error: any) {
+          if (error.code === 'auth/user-token-expired') {
+            await signOut();
+          }
           setNavItems([]);
           setUserRole(null);
         }

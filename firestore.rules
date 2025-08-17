@@ -16,56 +16,46 @@ service cloud.firestore {
       return isSignedIn() && (request.auth.token.role == 'admin' || request.auth.token.role == 'sub-admin');
     }
 
-    function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.role == 'admin';
-    }
-
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Users collection
+    // Users Collection
     match /users/{userId} {
       // Admins can read/write any user document
-      // Members can read/write their own document
+      // Members can only read/write their own document
       allow read, write: if isAdmin() || (isMember() && isOwner(userId));
-      
-      // All authenticated users can create their own user document (on sign-up)
-      allow create: if isSignedIn() && isOwner(userId);
     }
 
-    // Service Requests collection
-    match /serviceRequests/{requestId} {
-      // Admins can manage all service requests
-      allow read, write, delete: if isAdmin();
-      
-      // Members can create requests and read their own requests
-      allow create: if isMember();
-      allow read: if isMember() && isOwner(resource.data.uid);
-    }
-
-    // Contact Submissions collection
-    match /contactSubmissions/{submissionId} {
-      // Admins can manage all contact submissions
-      allow read, list, write, delete: if isAdmin();
-      
-      // Members can create submissions
-      allow create: if isMember();
+    // Counters Collection (for member IDs)
+    match /counters/memberIdCounter {
+      // Only admins can read or write the counter
+      allow read, write: if isAdmin();
     }
     
-    // Site Visits collection
-    match /siteVisits/{visitId} {
-        // Admins can read site visits for analytics
-        allow read: if isAdmin();
-        
-        // Any authenticated user can create a site visit log (client-side logging)
-        allow create: if isSignedIn();
+    // Service Requests Collection
+    match /serviceRequests/{requestId} {
+      // Admins can read/write any request
+      allow read, write: if isAdmin();
+      // Members can create requests, and read their own requests
+      allow create: if isMember() && isOwner(request.resource.data.uid);
+      allow read: if isMember() && isOwner(resource.data.uid);
+    }
+    
+    // Contact Submissions Collection
+    match /contactSubmissions/{submissionId} {
+       // Admins can read/write any submission
+      allow read, write: if isAdmin();
+      // Members can create submissions
+      allow create: if isMember() && isOwner(request.resource.data.uid);
     }
 
-    // Counters collection (for member IDs)
-    match /counters/{counterId} {
-      // Only Super Admins can read or modify counters
-      allow read, write: if isSuperAdmin();
+    // Site Visits Collection
+    match /siteVisits/{visitId} {
+      // Admins can read all visits
+      allow read: if isAdmin();
+      // Any authenticated user can create a site visit log
+      allow create: if isSignedIn();
     }
   }
 }

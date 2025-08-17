@@ -90,7 +90,16 @@ export default function SignInPage() {
         return;
       }
       
-      await userCredential.user.getIdToken(true);
+      try {
+        await userCredential.user.getIdToken(true);
+      } catch (tokenError: any) {
+        if (tokenError.code === 'auth/user-token-expired') {
+          await signOut();
+          toast({ variant: 'destructive', title: 'Session Expired', description: 'Your session has expired. Please sign in again.' });
+          return;
+        }
+        throw tokenError;
+      }
       
       toast({title: 'Sign In Successful', description: "Welcome! You're being redirected..."});
       router.push('/');
