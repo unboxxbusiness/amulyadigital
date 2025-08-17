@@ -48,13 +48,29 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseAuthListener />
-          {/* 
-            The session check has been moved to the (auth)/layout.tsx file, 
-            which now handles the distinction between authenticated and 
-            unauthenticated views. This RootLayout provides a consistent 
-            structure to prevent hydration errors.
-          */}
-          {children}
+          {session ? (
+            <SidebarProvider>
+              <Sidebar>
+                <div className="flex flex-col h-full">
+                  <div className="p-4 flex items-center gap-2">
+                    <Leaf className="size-8 text-primary" />
+                    <h1 className="text-xl font-bold font-headline text-primary">Amulya Digital</h1>
+                  </div>
+                  <MainNav />
+                </div>
+              </Sidebar>
+              <div className="flex flex-col w-full">
+                <SiteHeader />
+                <main className="p-4 sm:p-6 lg:p-8 flex-1">
+                  {children}
+                </main>
+              </div>
+            </SidebarProvider>
+          ) : (
+             <div className="min-h-screen bg-background">
+              {children}
+            </div>
+          )}
           <Toaster />
         </ThemeProvider>
       </body>
