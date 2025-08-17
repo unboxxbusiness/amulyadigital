@@ -61,47 +61,60 @@ export async function signInWithGoogle(user: UserCredential['user']) {
     const {uid, email, displayName, photoURL} = user;
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
+    
+    const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
 
     let claims: { role: string; status: string; memberId: string | null };
 
     if (userDoc.exists) {
         const existingData = userDoc.data();
+        const newRole = isSuperAdmin ? 'admin' : existingData?.role || 'member';
         claims = {
-            role: existingData?.role || 'member',
+            role: newRole,
             status: existingData?.status || 'pending',
             memberId: existingData?.memberId || null
         };
+        if (isSuperAdmin) {
+           claims.status = 'active';
+        }
     } else {
-        const isSuperAdmin = email === process.env.SUPER_ADMIN_EMAIL;
         const superAdminUsers = await adminDb.collection('users').where('role', '==', 'admin').get();
 
         let role: string;
         let status: string;
 
         if (isSuperAdmin && !superAdminUsers.empty) {
-            role = 'member';
-            status = 'pending';
+            const adminDoc = superAdminUsers.docs[0];
+            // If the existing admin is not this user, demote this user.
+            if (adminDoc.id !== uid) {
+                 role = 'member';
+                 status = 'pending';
+            } else {
+                 role = 'admin';
+                 status = 'active';
+            }
         } else {
             role = isSuperAdmin ? 'admin' : 'member';
             status = isSuperAdmin ? 'active' : 'pending';
         }
 
         claims = { role, status, memberId: null };
-
-        await userDocRef.set({
-            uid,
-            email,
-            displayName: displayName || email?.split('@')[0],
-            photoURL: photoURL || '',
-            role: claims.role,
-            status: claims.status,
-            createdAt: new Date().toISOString(),
-            portfolioUrl: '',
-            bio: '',
-        }, { merge: true });
-
-        await adminAuth.setCustomUserClaims(uid, { role: claims.role, status: claims.status });
     }
+
+    await userDocRef.set({
+        uid,
+        email,
+        displayName: displayName || email?.split('@')[0],
+        photoURL: photoURL || '',
+        role: claims.role,
+        status: claims.status,
+        createdAt: userDoc.exists ? userDoc.data()?.createdAt : new Date().toISOString(),
+        portfolioUrl: userDoc.exists ? userDoc.data()?.portfolioUrl : '',
+        bio: userDoc.exists ? userDoc.data()?.bio : '',
+    }, { merge: true });
+
+    await adminAuth.setCustomUserClaims(uid, { role: claims.role, status: claims.status });
+
 
     await createSession(uid, claims);
     revalidatePath('/');
