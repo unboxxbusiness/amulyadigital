@@ -51,7 +51,7 @@ export default function OffersPage() {
                     <div>
                         <CardTitle>Available Offers</CardTitle>
                         <CardDescription>
-                            Browse through the offers below or ask our AI assistant for details.
+                            Browse through the offers below for more details.
                         </CardDescription>
                     </div>
                 </CardHeader>

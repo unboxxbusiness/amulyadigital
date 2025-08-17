@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {LifeBuoy, Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake, Settings, Inbox, Trash2, Tags} from 'lucide-react';
+import {Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake, Settings, Inbox, Trash2, Tags} from 'lucide-react';
 
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
 import {useEffect, useState} from 'react';
@@ -15,7 +15,6 @@ const memberNavItems = [
   {href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard},
   {href: '/offers', label: 'Offers', icon: Tags},
   {href: '/services', label: 'Apply for Services', icon: Handshake},
-  {href: '/support', label: 'AI Chat', icon: LifeBuoy},
   {href: '/contact', label: 'Contact', icon: Mail},
   {href: '/settings', label: 'Settings', icon: Settings},
 ];
