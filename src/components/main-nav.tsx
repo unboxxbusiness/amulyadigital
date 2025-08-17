@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake, Settings, Inbox, Trash2, Tags} from 'lucide-react';
+import {Mail, Users, Crown, FileText, LayoutDashboard, UserPlus, Handshake, Settings, Inbox, Trash2, Tags, BarChart3} from 'lucide-react';
 
 import {SidebarMenu, SidebarMenuItem, SidebarMenuButton} from '@/components/ui/sidebar';
 import {useEffect, useState} from 'react';
@@ -22,6 +22,7 @@ const memberNavItems = [
 const adminNavItems = [
   {href: '/admin', label: 'Dashboard', icon: LayoutDashboard},
   {href: '/admin/inbox', label: 'Inbox', icon: Inbox},
+  {href: '/admin/reports', label: 'Reports', icon: BarChart3 },
   {href: '/admin/management', label: 'Admin Management', icon: UserPlus, adminOnly: true },
   {href: '/admin/applications', label: 'Membership Applications', icon: Users},
   {href: '/admin/lifetime', label: 'Lifetime Requests', icon: Crown},
@@ -87,7 +88,7 @@ export function MainNav() {
       <SidebarMenu className="p-2">
         {navItems.filter(isNavItemVisible).map(item => (
           <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton asChild isActive={pathname.startsWith(item.href) && (item.href !== '/' || pathname === '/')} tooltip={{children: item.label}}>
+            <SidebarMenuButton asChild isActive={pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin')} tooltip={{children: item.label}}>
               <Link href={item.href}>
                 <item.icon />
                 <span>{item.label}</span>
