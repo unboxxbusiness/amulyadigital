@@ -8,7 +8,7 @@ import Link from 'next/link';
 import {useState} from 'react';
 import {signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
 import {auth} from '@/lib/firebase/client-app';
-import {signInWithGoogle} from '../actions';
+import {signInWithGoogle, signOut} from '../actions';
 import {useToast} from '@/hooks/use-toast';
 import {useRouter} from 'next/navigation';
 
@@ -47,6 +47,9 @@ export default function SignInPage() {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
         return 'Invalid email or password. Please try again.';
+      case 'auth/user-token-expired':
+        signOut();
+        return 'Your session has expired. Please sign in again.';
       default:
         return 'An unexpected error occurred. Please try again later.';
     }
@@ -59,7 +62,6 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const {user} = userCredential;
-      // Force refresh of the token to get latest claims
       const idTokenResult = await user.getIdTokenResult(true); 
       const claims = idTokenResult.claims;
       
@@ -72,12 +74,8 @@ export default function SignInPage() {
       router.push(redirectPath);
 
     } catch (error: any) {
-      if (error.code && error.code.startsWith('auth/')) {
-        const friendlyMessage = handleFirebaseAuthErrors(error.code);
-        toast({variant: 'destructive', title: 'Sign In Failed', description: friendlyMessage});
-      } else {
-        toast({variant: 'destructive', title: 'Sign In Failed', description: 'An unexpected error occurred.'});
-      }
+      const friendlyMessage = handleFirebaseAuthErrors(error.code);
+      toast({variant: 'destructive', title: 'Sign In Failed', description: friendlyMessage});
     } finally {
         setIsLoading(false);
     }
@@ -89,7 +87,6 @@ export default function SignInPage() {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       
-      // Call the server action to handle user creation/update and session creation
       const result = await signInWithGoogle(userCredential.user);
 
       if (result.error) {
@@ -98,17 +95,17 @@ export default function SignInPage() {
         return;
       }
       
-      // Force a token refresh on the client to ensure claims are up-to-date before redirect
       await userCredential.user.getIdToken(true);
       
       toast({title: 'Sign In Successful', description: "Welcome! You're being redirected..."});
       router.push(result.redirectPath!);
 
     } catch (error: any) {
+      const friendlyMessage = handleFirebaseAuthErrors(error.code);
       toast({
         variant: 'destructive',
         title: 'Google Sign In Failed',
-        description: 'Could not complete sign in with Google. Please try again.',
+        description: friendlyMessage,
       });
     } finally {
         setIsGoogleLoading(false);

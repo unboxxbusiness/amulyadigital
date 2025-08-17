@@ -6,7 +6,7 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import Link from 'next/link';
 import {useState} from 'react';
-import {signUp, signInWithGoogle} from '../actions';
+import {signUp, signInWithGoogle, signOut} from '../actions';
 import {useToast} from '@/hooks/use-toast';
 import {GoogleAuthProvider, signInWithPopup} from 'firebase/auth';
 import {auth} from '@/lib/firebase/client-app';
@@ -63,7 +63,9 @@ export default function SignUpPage() {
         });
       }
     } catch (error: any) {
-      if (!error.digest?.startsWith('NEXT_REDIRECT')) {
+      if (error.digest?.startsWith('NEXT_REDIRECT')) {
+        // This is expected, do nothing.
+      } else {
         toast({
           variant: 'destructive',
           title: 'Sign Up Failed',
@@ -87,17 +89,21 @@ export default function SignUpPage() {
         return;
       }
       
-      // Force a token refresh on the client to ensure claims are up-to-date before redirect
       await userCredential.user.getIdToken(true);
 
       toast({title: 'Sign Up Successful', description: "Welcome! You're being redirected..."});
       router.push(result.redirectPath!);
 
     } catch (error: any) {
-      toast({
+      let message = 'Could not complete sign up with Google. Please try again.';
+      if (error.code === 'auth/user-token-expired') {
+        signOut();
+        message = 'Your session has expired. Please sign in again.';
+      }
+       toast({
         variant: 'destructive',
         title: 'Google Sign In Failed',
-        description: 'Could not complete sign up with Google. Please try again.',
+        description: message,
       });
     } finally {
         setIsGoogleLoading(false);

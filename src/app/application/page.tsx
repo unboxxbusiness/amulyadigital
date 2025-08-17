@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/client-app";
+import { signOut } from "@/app/(auth)/actions";
 
 export default function ApplicationPage() {
   const [status, setStatus] = useState("pending");
@@ -18,9 +19,15 @@ export default function ApplicationPage() {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const idTokenResult = await user.getIdTokenResult(true); // Force refresh
-            setStatus(idTokenResult.claims.status as string || 'pending');
-            setSubmissionDate(new Date(user.metadata.creationTime!).toLocaleDateString());
+            try {
+                const idTokenResult = await user.getIdTokenResult(true); // Force refresh
+                setStatus(idTokenResult.claims.status as string || 'pending');
+                setSubmissionDate(new Date(user.metadata.creationTime!).toLocaleDateString());
+            } catch (error: any) {
+                if (error.code === 'auth/user-token-expired') {
+                    await signOut();
+                }
+            }
         }
     });
     return () => unsubscribe();

@@ -1,3 +1,4 @@
+
 'use client';
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar';
 import {Button} from '@/components/ui/button';
@@ -16,8 +17,15 @@ export function UserNav() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        const idTokenResult = await currentUser.getIdTokenResult(true);
-        setUserRole(idTokenResult.claims.role as string);
+        try {
+            const idTokenResult = await currentUser.getIdTokenResult(true);
+            setUserRole(idTokenResult.claims.role as string);
+        } catch (error: any) {
+            if (error.code === 'auth/user-token-expired') {
+                await signOut();
+            }
+            setUserRole(null);
+        }
       } else {
         setUserRole(null);
       }
@@ -59,7 +67,7 @@ export function UserNav() {
           </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()}>Log out</DropdownMenuItem>
+        <DropdownMenuItem onClick={async () => await signOut()}>Log out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

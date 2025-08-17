@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/client-app";
 import { PasswordForm } from "./password-form";
+import { signOut } from "@/app/(auth)/actions";
 
 export default function AdminSettingsPage() {
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -15,8 +16,15 @@ export default function AdminSettingsPage() {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const idTokenResult = await user.getIdTokenResult(true);
-                setUserRole(idTokenResult.claims.role as string);
+                try {
+                    const idTokenResult = await user.getIdTokenResult(true);
+                    setUserRole(idTokenResult.claims.role as string);
+                } catch (error: any) {
+                    if (error.code === 'auth/user-token-expired') {
+                        await signOut();
+                    }
+                    setUserRole(null);
+                }
             } else {
                 setUserRole(null);
             }
