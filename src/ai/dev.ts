@@ -1,4 +1,4 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/answer-common-questions.ts';
+import '@/ai/flows/offer-chat.ts';

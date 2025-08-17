@@ -1,61 +1,72 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
+    
     // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
     function isMember() {
-      return isSignedIn() && request.auth.token.role == 'member';
+      return request.auth.token.role == 'member';
     }
 
     function isAdmin() {
-      return isSignedIn() && (request.auth.token.role == 'admin' || request.auth.token.role == 'sub-admin');
+      return request.auth.token.role == 'admin' || request.auth.token.role == 'sub-admin';
     }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    function isOwner(uid) {
+      return request.auth.uid == uid;
     }
 
     // Users Collection
     match /users/{userId} {
       // Admins can read/write any user document
-      // Members can only read/write their own document
-      allow read, write: if isAdmin() || (isMember() && isOwner(userId));
+      // Users can only read/write their own document
+      allow read, write: if isAdmin() || isOwner(userId);
     }
 
-    // Counters Collection (for member IDs)
-    match /counters/memberIdCounter {
-      // Only admins can read or write the counter
-      allow read, write: if isAdmin();
-    }
-    
     // Service Requests Collection
     match /serviceRequests/{requestId} {
-      // Admins can read/write any request
-      allow read, write: if isAdmin();
-      // Members can create requests, and read their own requests
+      // Admins can read any service request
+      allow read: if isAdmin();
+      // Users can create requests for themselves and read their own requests
       allow create: if isMember() && isOwner(request.resource.data.uid);
       allow read: if isMember() && isOwner(resource.data.uid);
-    }
-    
-    // Contact Submissions Collection
-    match /contactSubmissions/{submissionId} {
-       // Admins can read/write any submission
-      allow read, write: if isAdmin();
-      // Members can create submissions
-      allow create: if isMember() && isOwner(request.resource.data.uid);
+      // Admins can update the status
+      allow update: if isAdmin();
+      // Admins can delete
+      allow delete: if isAdmin();
     }
 
+    // Contact Submissions Collection
+    match /contactSubmissions/{submissionId} {
+        // Admins can read and delete any contact submission
+        allow read, delete: if isAdmin();
+        // Users can create submissions for themselves
+        allow create: if isOwner(request.resource.data.uid);
+    }
+    
     // Site Visits Collection
     match /siteVisits/{visitId} {
-      // Admins can read all visits
+      // Only admins can read visit logs
       allow read: if isAdmin();
-      // Any authenticated user can create a site visit log
-      allow create: if isSignedIn();
+      // Anyone can create a site visit log (as it's done via a server action)
+      allow create: if true;
+      // Only admins can delete logs
+      allow delete: if isAdmin();
+    }
+
+    // Counters Collection
+    match /counters/{counterId} {
+      // Only admins can read/write to counters
+      allow read, write: if isAdmin();
+    }
+
+    // Offers Collection
+    match /offers/{offerId} {
+        // Admins can manage all offers
+        allow write: if isAdmin();
+        // Authenticated users (members) can read offers
+        allow read: if request.auth != null;
     }
   }
 }

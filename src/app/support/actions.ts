@@ -1,11 +1,11 @@
 'use server';
 
-import { answerCommonQuestion } from '@/ai/flows/answer-common-questions';
-import type { AnswerCommonQuestionInput } from '@/ai/flows/answer-common-questions';
+import { offerChat } from '@/ai/flows/offer-chat';
+import type { OfferChatInput } from '@/ai/flows/offer-chat';
 
-export async function answerQuestionAction(input: AnswerCommonQuestionInput) {
+export async function offerChatAction(input: OfferChatInput) {
   try {
-    const output = await answerCommonQuestion(input);
+    const output = await offerChat(input);
     return { answer: output.answer };
   } catch (error) {
     console.error('Error in AI action:', error);
