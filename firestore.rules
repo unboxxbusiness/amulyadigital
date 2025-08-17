@@ -1,54 +1,63 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for admin roles
+    // Helper function to check if the user is an admin or sub-admin
     function isAdmin() {
-      return request.auth.token.role == 'admin' || request.auth.token.role == 'sub-admin';
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'sub-admin'];
     }
     
-    // Helper function to check if the user is the owner of a document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    // Helper function to check if the user is a super-admin
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // Users can read their own data, admins can read any user data
+    // Helper function to check if the user is a member
+    function isMember() {
+        return request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    // Users Collection
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) || isAdmin();
-      allow create: if request.auth != null;
+      // Admins can read/write any user document
+      // Users can only read/write their own document
+      allow read, write: if isAdmin() || request.auth.uid == userId;
+      // Allow creation for anyone (for sign-up)
+      allow create: if request.auth.uid != null;
     }
 
-    // Service Requests:
-    // Members can create requests for themselves.
-    // Admins can read/update all requests.
-    // Members can read their own requests.
+    // Service Requests Collection
     match /serviceRequests/{requestId} {
-      allow create: if isOwner(resource.data.uid);
-      allow read: if isOwner(get(/databases/$(database)/documents/serviceRequests/$(requestId)).data.uid) || isAdmin();
-      allow update, delete: if isAdmin();
+      // Admins can read/write any request
+      allow read, write: if isAdmin();
+      // Members can create their own requests
+      allow create: if isMember() && request.resource.data.uid == request.auth.uid;
+      // Members can read their own requests
+      allow read: if isMember() && resource.data.uid == request.auth.uid;
     }
-    
-    // Contact Submissions:
-    // Any authenticated user can create a submission.
-    // Only admins can read or delete them.
+
+    // Contact Submissions Collection
     match /contactSubmissions/{submissionId} {
-        allow create: if request.auth != null;
-        allow read, delete: if isAdmin();
+      // Admins can read/write any submission
+      allow read, write: if isAdmin();
+      // Authenticated users can create submissions for themselves
+      allow create: if request.auth.uid != null && request.resource.data.uid == request.auth.uid;
     }
     
-    // Site Visits: 
-    // Anyone can create (log a visit).
-    // Only admins can read the collection.
-    match /siteVisits/{visitId} {
-        allow create: if true;
-        allow read: if isAdmin();
-    }
-    
-    // Counters:
-    // Only accessible by admins for read and write operations.
+    // Counters Collection (for member IDs)
     match /counters/{counterId} {
-        allow read, write: if isAdmin();
+      // Only super admins can read/write counters
+      allow read, write: if isSuperAdmin();
     }
+    
+    // Site Visits Collection
+    match /siteVisits/{visitId} {
+        // Only admins can read visit logs
+        allow read: if isAdmin();
+        // Any authenticated user can create a site visit log (happens on dashboard load)
+        allow create: if request.auth.uid != null;
+    }
+
   }
 }
