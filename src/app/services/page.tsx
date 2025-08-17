@@ -1,9 +1,11 @@
+
 'use client';
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Briefcase, Landmark } from "lucide-react";
 import { applyForService, getMemberServiceRequests } from "./actions";
 import { useToast } from "@/hooks/use-toast";
@@ -82,46 +84,62 @@ export default function ServicesPage() {
         <h1 className="text-3xl font-bold tracking-tight font-headline">Services & Benefits</h1>
         <p className="text-muted-foreground">Access exclusive services available to Amulya Digital members.</p>
       </div>
+      
+      <Card>
+        <CardHeader>
+            <CardTitle>All Services</CardTitle>
+            <CardDescription>Select a service to view details and apply.</CardDescription>
+        </CardHeader>
+        <CardContent>
+             <Tabs defaultValue={services[0].serviceName} className="w-full">
+                <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
+                    {services.map((service) => (
+                        <TabsTrigger key={service.serviceName} value={service.serviceName}>
+                            {service.title}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+                {services.map((service) => {
+                    const status = getRequestStatusForService(service.serviceName);
+                    const hasApplied = status !== null;
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {services.map((service) => {
-            const status = getRequestStatusForService(service.serviceName);
-            const hasApplied = status !== null;
-
-            return (
-             <Card key={service.title} className="flex flex-col">
-                <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-2">
-                    {service.icon}
-                    <div className="flex-1">
-                       <CardTitle>{service.title}</CardTitle>
-                    </div>
-                     {hasApplied && (
-                       <Badge 
-                          variant={
-                              status === "pending" ? "secondary" : 
-                              status === "approved" ? "default" : "destructive"
-                          }
-                          className={status === "approved" ? "bg-accent text-accent-foreground" : ""}
-                        >
-                          {status}
-                        </Badge>
-                     )}
-                </CardHeader>
-                <CardContent className="flex-1">
-                    <p className="text-sm text-muted-foreground">{service.description}</p>
-                </CardContent>
-                <CardFooter>
-                    <Button 
-                        onClick={() => handleApply(service.serviceName)} 
-                        disabled={isPending || hasApplied}
-                        className="w-full"
-                    >
-                        {isPending ? "Applying..." : hasApplied ? "Applied" : service.action}
-                    </Button>
-                </CardFooter>
-            </Card>
-        )})}
-      </div>
+                    return (
+                        <TabsContent key={service.serviceName} value={service.serviceName}>
+                            <div className="flex flex-col md:flex-row items-start gap-6 p-6 border rounded-lg mt-2">
+                                <div className="p-3 bg-secondary rounded-lg">
+                                    {service.icon}
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold">{service.title}</h3>
+                                        {hasApplied && (
+                                            <Badge 
+                                                variant={
+                                                    status === "pending" ? "secondary" : 
+                                                    status === "approved" ? "default" : "destructive"
+                                                }
+                                                className={status === "approved" ? "bg-accent text-accent-foreground" : ""}
+                                            >
+                                                {status}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{service.description}</p>
+                                </div>
+                                <Button 
+                                    onClick={() => handleApply(service.serviceName)} 
+                                    disabled={isPending || hasApplied}
+                                    className="w-full md:w-auto"
+                                >
+                                    {isPending ? "Applying..." : hasApplied ? "Applied" : service.action}
+                                </Button>
+                            </div>
+                        </TabsContent>
+                    )
+                })}
+            </Tabs>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -169,7 +187,6 @@ export default function ServicesPage() {
              )}
         </CardContent>
       </Card>
-
     </div>
   )
 }
